@@ -267,6 +267,7 @@ ag_render_content_header([
         </div>
       </div>
       <div class="ag-table-ux-section ag-table-ux-pagination">
+        <div class="ag-table-ux-length"></div>
         <div class="ag-table-ux-page-info">0-0</div>
         <div class="btn-group btn-group-sm" role="group" aria-label="Cambiar página">
           <button type="button" class="btn btn-outline-secondary" data-page="prev" aria-label="Página anterior"><i class="fas fa-chevron-left"></i></button>
@@ -376,75 +377,8 @@ ag_render_content_header([
   </div>
 </section>
 
-<div class="modal fade" id="modalPlaceholdersSolicitud" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Placeholders de la solicitud</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body">
-        <div class="alert alert-info small" role="alert">
-          Los placeholders se pueden utilizar en la plantilla DOCX escribiendo la clave exacta entre llaves, por ejemplo: <code>{{SOL_FOLIO}}</code>.
-        </div>
-        <div data-placeholder-list class="table-responsive"></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="modalRegresarBorrador" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="post" action="index.php?ruta=solicitudes" id="formRegresarBorrador">
-        <div class="modal-header bg-warning">
-          <h5 class="modal-title">Regresar solicitud a borrador</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
-          <input type="hidden" name="cambiar_estado_solicitud" value="1">
-          <input type="hidden" name="solicitud_id" id="regresarBorradorSolicitudId">
-          <input type="hidden" name="nuevo_estado" value="borrador">
-          <div class="alert alert-warning small" id="regresarBorradorResumen" role="alert"></div>
-          <div class="mb-3">
-            <label for="regresarBorradorMotivo" class="form-label">Motivo del regreso</label>
-            <textarea class="form-control form-control-sm" name="motivo_regreso" id="regresarBorradorMotivo" rows="4" required minlength="5" maxlength="500" placeholder="Describe el motivo del regreso a borrador."></textarea>
-            <div class="form-text">El autor verá este mensaje como guía para realizar los ajustes necesarios.</div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-warning">Regresar a borrador</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="modalClienteCoincidenteSolicitud" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-info text-white">
-        <h5 class="modal-title">Cliente ya registrado</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body">
-        <p class="mb-3" data-mensaje-cliente>Se detectó un cliente previamente registrado que coincide con la información de la solicitud.</p>
-        <ul class="list-unstyled small mb-0" data-detalle-cliente></ul>
-        <div class="alert alert-warning small mt-3 mb-0" role="alert">
-          Al continuar se utilizarán los datos del cliente existente dentro del contrato.
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-info" id="btnConfirmarClienteCoincidente">
-          <i class="fas fa-file-signature me-1"></i>Generar contrato con cliente existente
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+<?php
+require_once 'vistas/partials/modal_placeholders_solicitud.php';
+require_once 'vistas/partials/modal_regresar_borrador.php';
+require_once 'vistas/partials/modal_cliente_coincidente_solicitud.php';
+?>

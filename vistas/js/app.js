@@ -378,6 +378,7 @@ function agSetupTableUxBars() {
         manager.gearButton = bar.querySelector('.ag-table-ux-gear');
         manager.menu = bar.querySelector('.ag-table-ux-actions-menu');
         manager.pageInfoEl = bar.querySelector('.ag-table-ux-page-info');
+        manager.lengthContainer = bar.querySelector('.ag-table-ux-length');
         manager.prevBtn = bar.querySelector('[data-page="prev"]');
         manager.nextBtn = bar.querySelector('[data-page="next"]');
         manager.newButton = bar.querySelector('.ag-table-ux-new');
@@ -694,6 +695,19 @@ function agInitializeTableInteractions(manager, instance, tableElement) {
     }
 
     manager.instance = instance;
+
+    if (manager.lengthContainer && !manager.lengthBound) {
+        const wrapper = tableElement.closest('.dataTables_wrapper');
+        if (wrapper) {
+            const lengthElement = wrapper.querySelector('.dataTables_length');
+            if (lengthElement) {
+                manager.lengthContainer.innerHTML = '';
+                manager.lengthContainer.appendChild(lengthElement);
+                lengthElement.classList.add('ag-table-ux-length-control');
+                manager.lengthBound = true;
+            }
+        }
+    }
 
     if (!manager.pageInfoBound && manager.pageInfoEl) {
         manager.updatePageInfo = () => {
@@ -6743,24 +6757,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 const estatus = parseInt(fila.dataset.estatus || "0", 10);
 
                 if (e.target.checked) {
-                if (seleccionados.size === 0) {
-                    estatusSeleccion = estatus;
-                    seleccionados.add(id);
-                } else {
-                    if (estatus !== estatusSeleccion) {
-                    e.target.checked = false;
-                    Swal.fire(
-                        "Selección inválida",
-                        "Solo puedes seleccionar filas con el mismo estatus.",
-                        "warning"
-                    );
-                    return;
+                    if (seleccionados.size === 0) {
+                        estatusSeleccion = estatus;
+                        seleccionados.add(id);
+                        fila.classList.add('ag-row-multi-selected');
+                    } else {
+                        if (estatus !== estatusSeleccion) {
+                            e.target.checked = false;
+                            fila.classList.remove('ag-row-multi-selected');
+                            Swal.fire(
+                                "Selección inválida",
+                                "Solo puedes seleccionar filas con el mismo estatus.",
+                                "warning"
+                            );
+                            return;
+                        }
+                        seleccionados.add(id);
+                        fila.classList.add('ag-row-multi-selected');
                     }
-                    seleccionados.add(id);
-                }
                 } else {
-                seleccionados.delete(id);
-                if (seleccionados.size === 0) estatusSeleccion = null;
+                    seleccionados.delete(id);
+                    fila.classList.remove('ag-row-multi-selected');
+                    if (seleccionados.size === 0) estatusSeleccion = null;
                 }
                 renderAcciones();
             });
@@ -6810,6 +6828,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             tr.dataset.estatus = String(nuevoEstatus);
                             const cb = tr.querySelector(".select-contrato");
                             if (cb) cb.checked = false;
+                            tr.classList.remove('ag-row-multi-selected');
                         }
                         });
 

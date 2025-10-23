@@ -281,6 +281,7 @@ ag_render_content_header([
             </div>
           </div>
           <div class="ag-table-ux-section ag-table-ux-pagination">
+            <div class="ag-table-ux-length"></div>
             <div class="ag-table-ux-page-info">0-0</div>
             <div class="btn-group btn-group-sm" role="group" aria-label="Cambiar página">
               <button type="button" class="btn btn-outline-secondary" data-page="prev" aria-label="Página anterior"><i class="fas fa-chevron-left"></i></button>

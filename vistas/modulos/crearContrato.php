@@ -219,37 +219,6 @@ $accionesHeader = [
         'class' => 'btn-outline-secondary'
     ],
 ];
-if ($esVistaSoloLectura) {
-    $esCancelado = $estatusContrato === 2;
-    $accionesHeader[] = [
-        'label' => 'Editar contrato',
-        'url' => 'index.php?ruta=crearContrato&contrato_id=' . $contratoEditarId,
-        'icon' => 'fas fa-pen',
-        'class' => $esCancelado ? 'btn-outline-secondary disabled' : 'btn-primary',
-        'attributes' => $esCancelado ? ['aria-disabled' => 'true', 'tabindex' => '-1'] : [],
-    ];
-    $accionesHeader[] = [
-        'label' => 'Nuevo contrato',
-        'url' => 'index.php?ruta=crearContrato',
-        'icon' => 'fas fa-file-signature',
-        'class' => 'btn-outline-primary'
-    ];
-    if ($solicitudId > 0) {
-        $accionesHeader[] = [
-            'label' => 'Solicitud vinculada',
-            'url' => 'index.php?ruta=solicitudes&solicitud_id=' . $solicitudId,
-            'icon' => 'fas fa-link',
-            'class' => 'btn-outline-secondary'
-        ];
-    }
-} elseif (!$estaEditando) {
-    $accionesHeader[] = [
-        'label' => 'Ver solicitudes',
-        'url' => 'index.php?ruta=solicitudes',
-        'icon' => 'fas fa-paper-plane',
-        'class' => 'btn-primary'
-    ];
-}
 ag_render_content_header([
     'title' => $tituloPagina,
     'subtitle' => $estaEditando ? 'Actualiza los datos del contrato seleccionado.' : 'Completa la información para generar un nuevo contrato.',
@@ -259,6 +228,137 @@ ag_render_content_header([
         ['label' => $tituloPagina],
     ],
     'actions' => $accionesHeader,
+]);
+require_once 'vistas/partials/record_toolbar.php';
+
+$toolbarPrimary = [
+    'label' => 'Nuevo contrato',
+    'url' => 'index.php?ruta=crearContrato',
+    'icon' => 'fas fa-file-signature',
+    'class' => 'btn btn-primary'
+];
+$toolbarSecondary = [
+    'label' => 'Volver a contratos',
+    'url' => 'index.php?ruta=contratos',
+    'icon' => 'fas fa-arrow-left',
+    'class' => 'btn btn-outline-secondary'
+];
+
+$contratoIdActual = $estaEditando ? $contratoEditarId : 0;
+$folioContrato = $estaEditando
+    ? trim((string)($contratoExistente['folio'] ?? ''))
+    : trim((string)($contratoPrefill['folio'] ?? ''));
+$clienteNombreContrato = '';
+if (is_array($clienteData) && !empty($clienteData['nombre'])) {
+    $clienteNombreContrato = trim((string)$clienteData['nombre']);
+} elseif (!empty($clientePrefill['cliente_nombre'])) {
+    $clienteNombreContrato = trim((string)$clientePrefill['cliente_nombre']);
+}
+$estadoContratoValor = $estatusContrato !== null ? (int)$estatusContrato : 1;
+$estadoContratoMap = [
+    0 => ['label' => 'Archivado', 'class' => 'badge bg-secondary'],
+    1 => ['label' => 'Activo', 'class' => 'badge bg-success'],
+    2 => ['label' => 'Cancelado', 'class' => 'badge bg-danger'],
+];
+$toolbarBadges = [];
+if (isset($estadoContratoMap[$estadoContratoValor])) {
+    $toolbarBadges[] = [
+        'label' => $estadoContratoMap[$estadoContratoValor]['label'],
+        'class' => $estadoContratoMap[$estadoContratoValor]['class'],
+    ];
+}
+if ($solicitudId > 0) {
+    $toolbarBadges[] = [
+        'label' => 'Solicitud #' . $solicitudId,
+        'class' => 'badge bg-info text-dark'
+    ];
+}
+$toolbarMeta = [];
+if ($estaEditando && !empty($contratoExistente['created_at'])) {
+    $toolbarMeta[] = 'Creado el ' . (string)$contratoExistente['created_at'];
+}
+if (!empty($contratoPrefill['tipo_contrato_nombre'] ?? '')) {
+    $toolbarMeta[] = 'Tipo: ' . (string)$contratoPrefill['tipo_contrato_nombre'];
+}
+
+$toolbarTitle = $estaEditando
+    ? ($folioContrato !== '' ? 'Contrato ' . $folioContrato : 'Contrato #' . $contratoIdActual)
+    : 'Nuevo contrato';
+$toolbarSubtitle = $clienteNombreContrato !== ''
+    ? 'Cliente: ' . $clienteNombreContrato
+    : ($estaEditando ? 'Detalle del contrato registrado.' : 'Captura los datos para generar el contrato.');
+
+$menuAcciones = [];
+$esCanceladoContrato = $estadoContratoValor === 2;
+
+if ($estaEditando) {
+    if ($esVistaSoloLectura && !$esCanceladoContrato) {
+        $menuAcciones[] = [
+            'type' => 'link',
+            'label' => 'Editar contrato',
+            'icon' => 'fas fa-pen',
+            'url' => 'index.php?ruta=crearContrato&contrato_id=' . $contratoIdActual,
+        ];
+    }
+
+    $menuAcciones[] = [
+        'type' => 'button',
+        'label' => 'Ver placeholders',
+        'icon' => 'fas fa-tags',
+        'class' => 'btnVerPlaceholdersContrato',
+        'data' => [
+            'contrato-id' => $contratoIdActual,
+        ],
+    ];
+
+    if ($solicitudId > 0) {
+        $menuAcciones[] = [
+            'type' => 'link',
+            'label' => 'Ver solicitud de origen',
+            'icon' => 'fas fa-link',
+            'url' => 'index.php?ruta=solicitudes&solicitud_id=' . $solicitudId,
+        ];
+    }
+
+    $menuAcciones[] = [
+        'type' => 'button',
+        'label' => 'Generar documentos',
+        'icon' => 'fas fa-file-word',
+        'class' => 'btnGenerarContrato',
+        'data' => [
+            'contrato-id' => $contratoIdActual,
+        ],
+        'attributes' => $esCanceladoContrato ? ['disabled' => true, 'aria-disabled' => 'true'] : [],
+    ];
+
+    if (!$esCanceladoContrato) {
+        $menuAcciones[] = [
+            'type' => 'form',
+            'label' => 'Cancelar contrato',
+            'icon' => 'fas fa-ban',
+            'action' => 'index.php?ruta=contratos',
+            'method' => 'post',
+            'form_class' => 'formCancelarContrato',
+            'inputs' => [
+                ['name' => 'csrf_token', 'value' => $csrfToken],
+                ['name' => 'cancelarContrato', 'value' => '1'],
+                ['name' => 'contrato_id', 'value' => (string)$contratoIdActual],
+                ['name' => 'motivo_cancelacion', 'value' => ''],
+                ['name' => 'password_confirmacion', 'value' => ''],
+            ],
+            'confirm' => '¿Desea cancelar este contrato? Esta acción no se puede deshacer.'
+        ];
+    }
+}
+
+ag_render_record_toolbar([
+    'primary_action' => $toolbarPrimary,
+    'secondary_action' => $toolbarSecondary,
+    'title' => $toolbarTitle,
+    'subtitle' => $toolbarSubtitle,
+    'badges' => $toolbarBadges,
+    'meta' => $toolbarMeta,
+    'menu_actions' => $menuAcciones,
 ]);
 ?>
 
@@ -509,6 +609,8 @@ ag_render_content_header([
     </div>
   </div>
 </section>
+
+<?php require_once 'vistas/partials/modal_placeholders_contrato.php'; ?>
 
 <?php if ($puedeVincularSolicitud): ?>
 <div class="modal fade" id="modalBuscarSolicitudContrato" tabindex="-1" aria-labelledby="modalBuscarSolicitudContratoLabel" aria-hidden="true">

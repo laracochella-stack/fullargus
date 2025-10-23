@@ -1,9 +1,11 @@
 <?php
+use App\Controllers\ControladorClientes;
 use App\Controllers\ControladorDesarrollos;
 use App\Controllers\ControladorParametros;
 use App\Controllers\ControladorSolicitudes;
 
 $resultadoGuardado = ControladorSolicitudes::ctrGuardarSolicitud();
+$csrfToken = $_SESSION['csrf_token'] ?? '';
 $permisoActual = strtolower(trim((string)($_SESSION['permission'] ?? 'user')));
 $puedeGestionar = in_array($permisoActual, ['moderator','senior','owner','admin'], true);
 $solicitudActual = null;
@@ -282,52 +284,6 @@ $accionesHeader = [
         'class' => 'btn-outline-secondary'
     ],
 ];
-$accionesHeader[] = [
-    'label' => 'Nueva solicitud',
-    'url' => 'index.php?ruta=nuevaSolicitud',
-    'icon' => 'fas fa-plus',
-    'class' => 'btn-primary'
-];
-
-if ($solicitudActual) {
-    $puedeEditarSolicitud = false;
-    $usuarioActualId = (int)($_SESSION['id'] ?? 0);
-    if (!$solicitudTieneContrato) {
-        if ($puedeGestionar) {
-            $puedeEditarSolicitud = in_array($estadoActual, ['borrador', 'en_revision'], true);
-        } else {
-            $puedeEditarSolicitud = $estadoActual === 'borrador' && (int)($solicitudActual['usuario_id'] ?? 0) === $usuarioActualId;
-        }
-    }
-
-    if ($puedeEditarSolicitud && $modoVisualizacion) {
-        $accionesHeader[] = [
-            'label' => 'Editar solicitud',
-            'url' => sprintf('index.php?ruta=nuevaSolicitud&id=%d', (int)$solicitudActual['id']),
-            'icon' => 'fas fa-pen',
-            'class' => 'btn-outline-primary'
-        ];
-    }
-
-    if ($puedeGestionar && $estadoActual === 'aprobada' && !$solicitudTieneContrato) {
-        $accionesHeader[] = [
-            'label' => 'Crear contrato',
-            'url' => sprintf('index.php?ruta=crearContrato&solicitud_id=%d', (int)$solicitudActual['id']),
-            'icon' => 'fas fa-file-signature',
-            'class' => 'btn-dark'
-        ];
-    }
-
-    if ($solicitudTieneContrato) {
-        $accionesHeader[] = [
-            'label' => 'Ver contrato vinculado',
-            'url' => sprintf('index.php?ruta=crearContrato&contrato_id=%d&ver=1', (int)$solicitudActual['contrato_id']),
-            'icon' => 'fas fa-file-contract',
-            'class' => 'btn-outline-dark'
-        ];
-    }
-}
-
 $tituloSolicitud = $solicitudActual
     ? ($modoVisualizacion ? 'Detalle de la solicitud' : 'Editar solicitud')
     : 'Nueva solicitud';
@@ -345,6 +301,294 @@ ag_render_content_header([
         ['label' => $tituloSolicitud],
     ],
     'actions' => $accionesHeader,
+]);
+require_once 'vistas/partials/record_toolbar.php';
+
+$toolbarPrimary = [
+    'label' => 'Nueva solicitud',
+    'url' => 'index.php?ruta=nuevaSolicitud',
+    'icon' => 'fas fa-plus',
+    'class' => 'btn btn-primary'
+];
+$toolbarSecondary = [
+    'label' => 'Volver a solicitudes',
+    'url' => 'index.php?ruta=solicitudes',
+    'icon' => 'fas fa-arrow-left',
+    'class' => 'btn btn-outline-secondary'
+];
+
+$solicitudId = (int)($solicitudActual['id'] ?? 0);
+$solicitudFolio = trim((string)($solicitudActual['folio'] ?? ''));
+$solicitudNombre = trim((string)($solicitudActual['nombre_completo'] ?? ''));
+$solicitudEstado = strtolower((string)$estadoActual);
+$estadoBadgeClases = [
+    'borrador' => 'badge bg-secondary',
+    'enviada' => 'badge bg-primary',
+    'en_revision' => 'badge bg-warning text-dark',
+    'aprobada' => 'badge bg-success',
+    'cancelada' => 'badge bg-dark',
+    'rechazada' => 'badge bg-danger',
+];
+$toolbarBadges = [];
+$toolbarMeta = [];
+
+if ($solicitudActual) {
+    $estadoEtiqueta = strtoupper(str_replace('_', ' ', $solicitudEstado));
+    $toolbarBadges[] = [
+        'label' => $estadoEtiqueta,
+        'class' => $estadoBadgeClases[$solicitudEstado] ?? 'badge bg-secondary'
+    ];
+    if ($solicitudTieneContrato) {
+        $contratoId = (int)($solicitudActual['contrato_id'] ?? 0);
+        $contratoFolio = trim((string)($solicitudActual['contrato_folio'] ?? ''));
+        $contratoBadge = 'Contrato #' . $contratoId;
+        if ($contratoFolio !== '') {
+            $contratoBadge .= ' · ' . $contratoFolio;
+        }
+        $toolbarBadges[] = [
+            'label' => $contratoBadge,
+            'class' => 'badge bg-dark'
+        ];
+    }
+    if (!empty($solicitudActual['fecha'])) {
+        $toolbarMeta[] = 'Fecha: ' . (string)$solicitudActual['fecha'];
+    }
+    $responsable = trim((string)($solicitudActual['nombre_corto'] ?? $solicitudActual['username'] ?? ''));
+    if ($responsable !== '') {
+        $toolbarMeta[] = 'Responsable: ' . $responsable;
+    }
+} else {
+    $toolbarMeta[] = 'Estado inicial: Borrador';
+}
+
+$toolbarTitle = $solicitudActual
+    ? ($solicitudFolio !== '' ? 'Solicitud ' . $solicitudFolio : 'Solicitud #' . $solicitudId)
+    : 'Nueva solicitud';
+$toolbarSubtitle = $solicitudActual
+    ? ($solicitudNombre !== '' ? $solicitudNombre : 'Detalle del registro')
+    : 'Completa los datos para generar una nueva solicitud.';
+
+$menuAcciones = [];
+$usuarioActualId = (int)($_SESSION['id'] ?? 0);
+$esPropietario = $solicitudActual && (int)($solicitudActual['usuario_id'] ?? 0) === $usuarioActualId;
+$permisoActualLower = strtolower((string)($_SESSION['permission'] ?? 'user'));
+$esGestor = $puedeGestionar;
+$puedeCancelarConContrato = in_array($permisoActualLower, ['owner', 'admin'], true);
+
+if ($solicitudActual) {
+    $puedeEditarSolicitud = false;
+    if (!$solicitudTieneContrato) {
+        if ($esGestor && in_array($solicitudEstado, ['borrador', 'en_revision'], true)) {
+            $puedeEditarSolicitud = true;
+        } elseif ($esPropietario && $solicitudEstado === 'borrador') {
+            $puedeEditarSolicitud = true;
+        }
+    }
+
+    if ($modoVisualizacion && $puedeEditarSolicitud) {
+        $menuAcciones[] = [
+            'type' => 'link',
+            'label' => 'Editar solicitud',
+            'icon' => 'fas fa-pen',
+            'url' => sprintf('index.php?ruta=nuevaSolicitud&id=%d', $solicitudId),
+        ];
+    }
+
+    if ($esGestor) {
+        $menuAcciones[] = [
+            'type' => 'button',
+            'label' => 'Ver placeholders',
+            'icon' => 'fas fa-tags',
+            'class' => 'btnVerPlaceholdersSolicitud',
+            'data' => [
+                'solicitud-id' => $solicitudId,
+            ],
+        ];
+
+        if ($solicitudEstado === 'aprobada') {
+            $menuAcciones[] = [
+                'type' => 'button',
+                'label' => 'Generar solicitud (Word)',
+                'icon' => 'fas fa-file-word',
+                'class' => 'btnGenerarSolicitudDocx',
+                'data' => [
+                    'solicitud-id' => $solicitudId,
+                    'csrf' => $csrfToken,
+                ],
+            ];
+        }
+    }
+
+    if ($solicitudTieneContrato) {
+        $menuAcciones[] = [
+            'type' => 'link',
+            'label' => 'Ver contrato vinculado',
+            'icon' => 'fas fa-file-contract',
+            'url' => sprintf('index.php?ruta=crearContrato&contrato_id=%d&ver=1', (int)$solicitudActual['contrato_id']),
+        ];
+    }
+
+    if ($esGestor && $solicitudEstado === 'aprobada' && !$solicitudTieneContrato) {
+        $urlCrearContrato = sprintf('index.php?ruta=crearContrato&solicitud_id=%d', $solicitudId);
+        $normalizarId = static function ($valor): string {
+            if ($valor === null) {
+                return '';
+            }
+            $texto = strtoupper(trim((string)$valor));
+            return $texto;
+        };
+        $solicitudRfc = $normalizarId($solicitudActual['rfc'] ?? null);
+        $solicitudCurp = $normalizarId($solicitudActual['curp'] ?? null);
+        $clienteCoincidencia = null;
+        $matchTexto = '';
+        if ($solicitudRfc !== '' || $solicitudCurp !== '') {
+            $clienteEncontrado = ControladorClientes::ctrBuscarClientePorRfcCurp(
+                $solicitudRfc !== '' ? $solicitudRfc : null,
+                $solicitudCurp !== '' ? $solicitudCurp : null
+            );
+            if (is_array($clienteEncontrado)) {
+                $clienteCoincidencia = $clienteEncontrado;
+                $coincideRfc = $solicitudRfc !== '' && strcasecmp((string)($clienteEncontrado['rfc'] ?? ''), $solicitudRfc) === 0;
+                $coincideCurp = $solicitudCurp !== '' && strcasecmp((string)($clienteEncontrado['curp'] ?? ''), $solicitudCurp) === 0;
+                if ($coincideRfc && $coincideCurp) {
+                    $matchTexto = 'RFC y CURP';
+                } elseif ($coincideRfc) {
+                    $matchTexto = 'RFC';
+                } elseif ($coincideCurp) {
+                    $matchTexto = 'CURP';
+                } else {
+                    $matchTexto = 'los datos proporcionados';
+                }
+            }
+        }
+        $crearContratoData = [
+            'solicitud-id' => $solicitudId,
+            'url-base' => $urlCrearContrato,
+        ];
+        if ($solicitudRfc !== '') {
+            $crearContratoData['rfc'] = $solicitudRfc;
+        }
+        if ($solicitudCurp !== '') {
+            $crearContratoData['curp'] = $solicitudCurp;
+        }
+        if ($clienteCoincidencia && (int)($clienteCoincidencia['id'] ?? 0) > 0) {
+            $clienteIdCoincidencia = (int)$clienteCoincidencia['id'];
+            $crearContratoData['cliente-id'] = $clienteIdCoincidencia;
+            $crearContratoData['cliente-nombre'] = trim((string)($clienteCoincidencia['nombre'] ?? ''));
+            $crearContratoData['cliente-estado'] = trim((string)($clienteCoincidencia['estado'] ?? ''));
+            if ($matchTexto !== '') {
+                $crearContratoData['cliente-match'] = $matchTexto;
+            }
+            if (!empty($clienteCoincidencia['rfc'])) {
+                $crearContratoData['cliente-rfc'] = strtoupper(trim((string)$clienteCoincidencia['rfc']));
+            }
+            if (!empty($clienteCoincidencia['curp'])) {
+                $crearContratoData['cliente-curp'] = strtoupper(trim((string)$clienteCoincidencia['curp']));
+            }
+            $crearContratoData['url-cliente'] = sprintf('%s&cliente_id=%d', $urlCrearContrato, $clienteIdCoincidencia);
+        }
+
+        $menuAcciones[] = [
+            'type' => 'link',
+            'label' => 'Crear contrato',
+            'icon' => 'fas fa-file-signature',
+            'url' => $urlCrearContrato,
+            'class' => 'btnCrearContratoSolicitud',
+            'data' => $crearContratoData,
+        ];
+    }
+
+    if ($esPropietario && $solicitudEstado === 'borrador' && !$solicitudTieneContrato) {
+        $menuAcciones[] = [
+            'type' => 'form',
+            'label' => 'Enviar solicitud',
+            'icon' => 'fas fa-paper-plane',
+            'action' => 'index.php?ruta=solicitudes',
+            'method' => 'post',
+            'form_class' => 'formCambiarEstadoSolicitud',
+            'inputs' => [
+                ['name' => 'csrf_token', 'value' => $csrfToken],
+                ['name' => 'cambiar_estado_solicitud', 'value' => '1'],
+                ['name' => 'solicitud_id', 'value' => (string)$solicitudId],
+                ['name' => 'nuevo_estado', 'value' => 'enviada'],
+            ],
+            'confirm' => '¿Enviar solicitud?'
+        ];
+    }
+
+    if ($esGestor && !$solicitudTieneContrato && in_array($solicitudEstado, ['enviada', 'en_revision'], true)) {
+        $menuAcciones[] = [
+            'type' => 'button',
+            'label' => 'Regresar a borrador',
+            'icon' => 'fas fa-undo-alt',
+            'class' => 'btnRegresarBorrador',
+            'attributes' => [
+                'data-bs-toggle' => 'modal',
+                'data-bs-target' => '#modalRegresarBorrador',
+                'data-solicitud-id' => (string)$solicitudId,
+                'data-solicitud-folio' => $solicitudFolio,
+                'data-solicitud-nombre' => $solicitudNombre,
+            ],
+        ];
+    }
+
+    if ($esGestor && !$solicitudTieneContrato) {
+        $estadoCambios = [
+            'en_revision' => ['label' => 'Marcar en revisión', 'icon' => 'fas fa-clipboard-check'],
+            'aprobada' => ['label' => 'Aprobar solicitud', 'icon' => 'fas fa-check-circle'],
+            'cancelada' => ['label' => 'Cancelar solicitud', 'icon' => 'fas fa-ban'],
+        ];
+        foreach ($estadoCambios as $estadoCambio => $datosEstado) {
+            if ($solicitudEstado === $estadoCambio) {
+                continue;
+            }
+            $menuAcciones[] = [
+                'type' => 'form',
+                'label' => $datosEstado['label'],
+                'icon' => $datosEstado['icon'],
+                'action' => 'index.php?ruta=solicitudes',
+                'method' => 'post',
+                'form_class' => 'formCambiarEstadoSolicitud',
+                'inputs' => [
+                    ['name' => 'csrf_token', 'value' => $csrfToken],
+                    ['name' => 'cambiar_estado_solicitud', 'value' => '1'],
+                    ['name' => 'solicitud_id', 'value' => (string)$solicitudId],
+                    ['name' => 'nuevo_estado', 'value' => $estadoCambio],
+                    ['name' => 'motivo_cancelacion', 'value' => ''],
+                    ['name' => 'password_confirmacion', 'value' => ''],
+                ],
+                'confirm' => 'Cambiar estado a ' . strtoupper(str_replace('_', ' ', $estadoCambio)) . '?'
+            ];
+        }
+    } elseif ($solicitudTieneContrato && $solicitudEstado !== 'cancelada' && $puedeCancelarConContrato) {
+        $menuAcciones[] = [
+            'type' => 'form',
+            'label' => 'Cancelar solicitud vinculada',
+            'icon' => 'fas fa-ban',
+            'action' => 'index.php?ruta=solicitudes',
+            'method' => 'post',
+            'form_class' => 'formCambiarEstadoSolicitud',
+            'inputs' => [
+                ['name' => 'csrf_token', 'value' => $csrfToken],
+                ['name' => 'cambiar_estado_solicitud', 'value' => '1'],
+                ['name' => 'solicitud_id', 'value' => (string)$solicitudId],
+                ['name' => 'nuevo_estado', 'value' => 'cancelada'],
+                ['name' => 'motivo_cancelacion', 'value' => ''],
+                ['name' => 'password_confirmacion', 'value' => ''],
+            ],
+            'confirm' => '¿Cancelar la solicitud vinculada al contrato?'
+        ];
+    }
+}
+
+ag_render_record_toolbar([
+    'primary_action' => $toolbarPrimary,
+    'secondary_action' => $toolbarSecondary,
+    'title' => $toolbarTitle,
+    'subtitle' => $toolbarSubtitle,
+    'badges' => $toolbarBadges,
+    'meta' => $toolbarMeta,
+    'menu_actions' => $menuAcciones,
 ]);
 ?>
 <section class="content">
@@ -397,7 +641,7 @@ ag_render_content_header([
     <?php endif; ?>
 
     <form method="post" action="index.php?ruta=nuevaSolicitud&amp;accion=guardarSolicitud" id="formSolicitud" class="ag-form-layout"<?php echo $modoVisualizacion ? ' data-view-only="1"' : ''; ?>>
-      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES); ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
       <input type="hidden" name="solicitud_id" value="<?php echo htmlspecialchars($solicitudActual['id'] ?? ''); ?>">
 
       <div class="ag-form-card card shadow-sm mb-4">
@@ -787,3 +1031,8 @@ ag_render_content_header([
     </form>
   </div>
 </section>
+<?php
+require_once 'vistas/partials/modal_placeholders_solicitud.php';
+require_once 'vistas/partials/modal_regresar_borrador.php';
+require_once 'vistas/partials/modal_cliente_coincidente_solicitud.php';
+?>

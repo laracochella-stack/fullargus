@@ -745,6 +745,18 @@ label.form-label.ag-placeholder-label {
   background-color: rgba(13, 110, 253, 0.04);
 }
 
+.ag-row-selected,
+.ag-row-multi-selected {
+  background-color: rgba(13, 110, 253, 0.08) !important;
+  box-shadow: 0 0 0.75rem rgba(13, 110, 253, 0.35);
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.ag-row-selected > td,
+.ag-row-multi-selected > td {
+  background-color: transparent !important;
+}
+
 table.dataTable thead th.no-sort::after,
 table.dataTable thead th.no-sort::before {
   display: none !important;
@@ -1229,6 +1241,159 @@ table.dataTable thead th.no-sort::before {
 .ag-table-ux-section.ag-table-ux-extra {
     flex: 1 1 auto;
     justify-content: flex-end;
+}
+
+.ag-table-ux-length .dataTables_length {
+    margin: 0;
+}
+
+.ag-table-ux-length .dataTables_length label {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: #495057;
+}
+
+.ag-table-ux-length .dataTables_length select {
+    min-width: 5.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(108, 117, 125, 0.2);
+    padding: 0.35rem 0.75rem;
+    background-color: #f8fafc;
+}
+
+.ag-record-toolbar {
+    border-radius: 0.85rem;
+    background-color: #ffffff;
+    margin-bottom: 1.25rem;
+}
+
+.ag-record-toolbar .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+@media (min-width: 992px) {
+    .ag-record-toolbar .card-body {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+.ag-record-toolbar-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.ag-record-toolbar-section.ag-record-toolbar-primary,
+.ag-record-toolbar-section.ag-record-toolbar-secondary {
+    flex: 0 0 auto;
+}
+
+.ag-record-toolbar-section.ag-record-toolbar-info {
+    flex: 1 1 auto;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.ag-record-toolbar-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    text-align: center;
+}
+
+@media (min-width: 768px) {
+    .ag-record-toolbar-summary {
+        text-align: left;
+        align-items: flex-start;
+    }
+}
+
+.ag-record-toolbar-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.ag-record-toolbar-subtitle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.ag-record-toolbar-badges {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.ag-record-toolbar-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.ag-record-toolbar-extra {
+    font-size: 0.85rem;
+    color: #495057;
+}
+
+.ag-record-toolbar-actions .ag-record-toolbar-gear {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ag-record-toolbar-dropdown {
+    min-width: 18rem;
+    padding: 0.35rem 0;
+}
+
+.ag-record-toolbar-menu-action {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.45rem 1rem;
+    font-size: 0.9rem;
+}
+
+.ag-record-toolbar-menu-action i {
+    font-size: 1rem;
+    width: 1.25rem;
+    text-align: center;
+}
+
+.ag-record-toolbar-action-label {
+    flex: 1 1 auto;
+}
+
+.ag-record-toolbar-action-description {
+    display: block;
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.ag-record-toolbar-menu-form {
+    margin: 0;
+}
+
+.ag-record-toolbar-menu-form .dropdown-item {
+    width: 100%;
+    text-align: left;
 }
 
 .ag-table-ux-primary {
