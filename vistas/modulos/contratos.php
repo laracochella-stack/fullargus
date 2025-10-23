@@ -138,15 +138,6 @@ if ($alertasSwal) {
 }
 require_once 'vistas/partials/content_header.php';
 $permisoActual = $_SESSION['permission'] ?? '';
-$accionesHeader = [];
-if (in_array($permisoActual, ['moderator', 'senior', 'owner', 'admin'], true)) {
-    $accionesHeader[] = [
-        'label' => 'Nuevo contrato',
-        'url' => 'index.php?ruta=crearContrato',
-        'icon' => 'fas fa-file-signature',
-        'class' => 'btn-primary'
-    ];
-}
 ag_render_content_header([
     'title' => 'Contratos',
     'subtitle' => 'Administre los contratos activos, archivados o cancelados.',
@@ -154,7 +145,6 @@ ag_render_content_header([
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Contratos']
     ],
-    'actions' => $accionesHeader,
 ]);
 ?>
 <section class="content">
@@ -260,7 +250,7 @@ ag_render_content_header([
               $tablaContratosParamsJson = '{}';
           }
           ?>
-          <table class="table table-hover align-middle ag-data-table" id="tablaContratos" data-dt-resource="contratos" data-dt-params="<?php echo htmlspecialchars($tablaContratosParamsJson, ENT_QUOTES, 'UTF-8'); ?>">
+          <table class="table table-striped table-hover align-middle ag-data-table" id="tablaContratos" data-dt-resource="contratos" data-dt-params="<?php echo htmlspecialchars($tablaContratosParamsJson, ENT_QUOTES, 'UTF-8'); ?>" data-datatable-options='{"dom":"rtip"}'>
             <thead>
               <tr>
                 <th scope="col" class="control" data-priority="1"></th>

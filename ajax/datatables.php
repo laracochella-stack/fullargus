@@ -1197,44 +1197,6 @@ switch ($resource) {
                             $escape($solicitud['nombre_completo'] ?? '')
                         );
                     }
-                    foreach (['en_revision' => 'warning', 'aprobada' => 'success', 'cancelada' => 'danger'] as $estadoCambio => $color) {
-                        if ($estado !== $estadoCambio) {
-                            $accionesPartes[] = sprintf(
-                                '<form method="post" class="formCambiarEstadoSolicitud" action="index.php?ruta=solicitudes">'
-                                . '<input type="hidden" name="csrf_token" value="%1$s">'
-                                . '<input type="hidden" name="cambiar_estado_solicitud" value="1">'
-                                . '<input type="hidden" name="solicitud_id" value="%2$d">'
-                                . '<input type="hidden" name="nuevo_estado" value="%3$s">'
-                                . '<input type="hidden" name="motivo_cancelacion" value="">'
-                                . '<input type="hidden" name="password_confirmacion" value="">'
-                                . '<button type="submit" class="btn btn-%4$s btn-sm" data-confirm-text="Cambiar estado a %5$s?">'
-                                . '<i class="fas fa-flag"></i>'
-                                . '</button>'
-                                . '</form>',
-                                $escape($csrfToken),
-                                (int)($solicitud['id'] ?? 0),
-                                $estadoCambio,
-                                $color,
-                                strtoupper(str_replace('_', ' ', $estadoCambio))
-                            );
-                        }
-                    }
-                } elseif ($estado !== 'cancelada' && $puedeCancelarConContrato) {
-                    $accionesPartes[] = sprintf(
-                        '<form method="post" class="formCambiarEstadoSolicitud" action="index.php?ruta=solicitudes">'
-                        . '<input type="hidden" name="csrf_token" value="%1$s">'
-                        . '<input type="hidden" name="cambiar_estado_solicitud" value="1">'
-                        . '<input type="hidden" name="solicitud_id" value="%2$d">'
-                        . '<input type="hidden" name="nuevo_estado" value="cancelada">'
-                        . '<input type="hidden" name="motivo_cancelacion" value="">'
-                        . '<input type="hidden" name="password_confirmacion" value="">'
-                        . '<button type="submit" class="btn btn-danger btn-sm" data-confirm-text="¿Cancelar la solicitud vinculada al contrato?">'
-                        . '<i class="fas fa-ban"></i>'
-                        . '</button>'
-                        . '</form>',
-                        $escape($csrfToken),
-                        (int)($solicitud['id'] ?? 0)
-                    );
                 }
             }
 
