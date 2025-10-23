@@ -228,28 +228,66 @@ ag_render_content_header([
     <div class="card">
       <div class="card-header"><h3 class="card-title">Listado</h3></div>
       <div class="card-body table-responsive">
-        <div class="row g-3 align-items-end mb-3" id="filtrosClientes">
-          <div class="col-md-4">
-            <label class="form-label" for="filtroClientesEstado">Estado</label>
-            <select class="form-select form-select-sm" id="filtroClientesEstado" aria-label="Filtrar por estado">
-              <option value="activos" selected>Activos</option>
-              <option value="archivados">Archivados</option>
-              <option value="todos">Todos</option>
-            </select>
+        <div class="ag-table-ux-bar" data-table="#tablaClientes" data-default-label="Clientes" data-record-format="Cliente {data-nombre}" data-record-key="data-id" data-empty-message="Selecciona un cliente para ver acciones disponibles.">
+          <div class="ag-table-ux-section ag-table-ux-primary">
+            <div class="ag-table-ux-primary">
+              <a href="index.php?ruta=crearCuenta" class="btn btn-primary ag-table-ux-new">
+                <i class="fas fa-user-plus me-1"></i>
+                Nuevo
+              </a>
+              <div class="ag-table-ux-current">Clientes</div>
+              <div class="dropdown ag-table-ux-actions">
+                <button class="btn btn-outline-secondary ag-table-ux-gear" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones del cliente" disabled>
+                  <i class="fas fa-cog"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end ag-table-ux-actions-menu">
+                  <div class="dropdown-item-text ag-record-empty-hint">Selecciona un cliente para ver acciones disponibles.</div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="col-md-4">
-            <label class="form-label" for="filtroClientesNacionalidad">Nacionalidad</label>
-            <select class="form-select form-select-sm" id="filtroClientesNacionalidad" aria-label="Filtrar por nacionalidad">
-              <option value="">Todas</option>
-              <?php foreach ($listaNacionalidades as $nac) : ?>
-                <option value="<?php echo htmlspecialchars($nac['identificador'] ?? '', ENT_QUOTES); ?>"><?php echo htmlspecialchars($nac['nombre'] ?? ''); ?></option>
-              <?php endforeach; ?>
-            </select>
+          <div class="ag-table-ux-section ag-table-ux-search">
+            <div class="ag-table-ux-search-control">
+              <input type="search" class="form-control form-control-sm ag-table-ux-search-input" placeholder="Buscar en clientes">
+              <button type="button" class="btn btn-outline-secondary btn-sm ag-table-ux-filter-toggle">
+                <i class="fas fa-filter me-1"></i> Filtros
+              </button>
+            </div>
+            <div class="ag-table-ux-filter-panel">
+              <div class="row g-3" id="filtrosClientes">
+                <div class="col-12 col-md-4">
+                  <label class="form-label" for="filtroClientesEstado">Estado</label>
+                  <select class="form-select form-select-sm" id="filtroClientesEstado" aria-label="Filtrar por estado">
+                    <option value="activos" selected>Activos</option>
+                    <option value="archivados">Archivados</option>
+                    <option value="todos">Todos</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label" for="filtroClientesNacionalidad">Nacionalidad</label>
+                  <select class="form-select form-select-sm" id="filtroClientesNacionalidad" aria-label="Filtrar por nacionalidad">
+                    <option value="">Todas</option>
+                    <?php foreach ($listaNacionalidades as $nac) : ?>
+                      <option value="<?php echo htmlspecialchars($nac['identificador'] ?? '', ENT_QUOTES); ?>"><?php echo htmlspecialchars($nac['nombre'] ?? ''); ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label" for="filtroClientesTexto">Búsqueda</label>
+                  <input type="search" id="filtroClientesTexto" class="form-control form-control-sm" placeholder="Nombre, correo o RFC" aria-label="Filtrar por texto">
+                  <p class="form-text mb-0">Los filtros se aplican automáticamente al listado.</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="col-md-4">
-            <label class="form-label" for="filtroClientesTexto">Búsqueda</label>
-            <input type="search" id="filtroClientesTexto" class="form-control form-control-sm" placeholder="Nombre, correo o RFC" aria-label="Filtrar por texto">
+          <div class="ag-table-ux-section ag-table-ux-pagination">
+            <div class="ag-table-ux-page-info">0-0</div>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Cambiar página">
+              <button type="button" class="btn btn-outline-secondary" data-page="prev" aria-label="Página anterior"><i class="fas fa-chevron-left"></i></button>
+              <button type="button" class="btn btn-outline-secondary" data-page="next" aria-label="Página siguiente"><i class="fas fa-chevron-right"></i></button>
+            </div>
           </div>
+          <div class="ag-table-ux-section ag-table-ux-extra"></div>
         </div>
         <table class="table table-hover align-middle ag-data-table" id="tablaClientes" data-dt-resource="clientes" data-dt-params='{"estado":"activos"}'>
           <thead>
@@ -259,7 +297,7 @@ ag_render_content_header([
               <th scope="col" class="all">Nombre</th>
               <th scope="col" class="min-tablet">Email</th>
               <th scope="col" class="min-tablet">Estado</th>
-              <th scope="col" class="all no-sort">Acciones</th>
+              <th scope="col" class="d-none">Acciones</th>
             </tr>
           </thead>
           <tbody></tbody>
