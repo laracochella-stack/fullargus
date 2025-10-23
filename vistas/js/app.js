@@ -308,6 +308,15 @@ function agConvertLabelsToPlaceholders(root = document) {
         }
 
         const tagName = input.tagName.toLowerCase();
+        const inputType = (input.getAttribute('type') || '').toLowerCase();
+        const isDateLike = tagName === 'input' && ['date', 'datetime-local', 'month', 'week', 'time'].includes(inputType);
+
+        if (isDateLike) {
+            input.classList.add('ag-input-underlined');
+            input.dataset.agPlaceholderApplied = '1';
+            return;
+        }
+
         if (tagName === 'select' && input.hasAttribute('data-ag-keep-label')) {
             input.classList.add('ag-input-underlined');
             input.dataset.agPlaceholderApplied = '1';

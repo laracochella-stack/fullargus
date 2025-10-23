@@ -162,13 +162,11 @@ label.form-label.ag-placeholder-label {
   opacity: 0.75;
 }
 
-.ag-input-underlined.is-invalid,
-.ag-input-underlined:invalid {
+.ag-input-underlined.is-invalid {
   border-bottom-color: #dc3545;
 }
 
-.ag-input-underlined.is-valid,
-.ag-input-underlined:valid {
+.ag-input-underlined.is-valid {
   border-bottom-color: #28a745;
 }
 
