@@ -79,15 +79,22 @@ $formSoloLectura = isset($soloLecturaCompleto) && $soloLecturaCompleto;
 
 <!-- Rango de pago (inicio y fin) -->
 <div class="col-md-6">
-  <label class="form-label" for="rangoPagoInicio">Plazo del financiamiento</label>
-  <div class="d-flex align-items-center">
-    <input type="date" class="form-control form-control-sm" name="rango_pago_inicio" id="rangoPagoInicio" required value="<?php echo $valorContrato('rango_pago_inicio_date'); ?>" data-requirement="Fecha inicial del periodo de pagos (DD-MM-AAAA)." aria-describedby="rangoPagoHint">
-    <input type="hidden" name="rango_pago_inicio_texto" id="rangoPagoInicioTexto" value="<?php echo $valorContrato('rango_pago_inicio'); ?>">
-    <span class="mx-2">a</span>
-    <input type="date" class="form-control form-control-sm" name="rango_pago_fin" id="rangoPagoFin" required value="<?php echo $valorContrato('rango_pago_fin_date'); ?>" data-requirement="Fecha final del periodo de pagos (DD-MM-AAAA)." aria-describedby="rangoPagoHint">
-    <input type="hidden" name="rango_pago_fin_texto" id="rangoPagoFinTexto" value="<?php echo $valorContrato('rango_pago_fin'); ?>">
-  </div>
-  <div id="rangoPagoHint" class="form-text ag-field-hint">Define el intervalo completo de pagos programados (inicio y fin en formato DD-MM-AAAA).</div>
+  <fieldset class="border-0 p-0 m-0">
+    <legend class="col-form-label pt-0 form-label">Plazo del financiamiento</legend>
+    <div class="row g-2 align-items-end">
+      <div class="col-sm-6">
+        <label class="form-label" for="rangoPagoInicio">Fecha inicial</label>
+        <input type="date" class="form-control form-control-sm" name="rango_pago_inicio" id="rangoPagoInicio" required value="<?php echo $valorContrato('rango_pago_inicio_date'); ?>" data-requirement="Fecha inicial del periodo de pagos (DD-MM-AAAA)." aria-describedby="rangoPagoHint">
+        <input type="hidden" name="rango_pago_inicio_texto" id="rangoPagoInicioTexto" value="<?php echo $valorContrato('rango_pago_inicio'); ?>">
+      </div>
+      <div class="col-sm-6">
+        <label class="form-label" for="rangoPagoFin">Fecha final</label>
+        <input type="date" class="form-control form-control-sm" name="rango_pago_fin" id="rangoPagoFin" required value="<?php echo $valorContrato('rango_pago_fin_date'); ?>" data-requirement="Fecha final del periodo de pagos (DD-MM-AAAA)." aria-describedby="rangoPagoHint">
+        <input type="hidden" name="rango_pago_fin_texto" id="rangoPagoFinTexto" value="<?php echo $valorContrato('rango_pago_fin'); ?>">
+      </div>
+    </div>
+    <div id="rangoPagoHint" class="form-text ag-field-hint mt-2">Define el intervalo completo de pagos programados (inicio y fin en formato DD-MM-AAAA).</div>
+  </fieldset>
 </div>
 <div class="col-md-12">
   <label class="form-label" for="crearClausulas">Cláusulas del financiamiento</label>
