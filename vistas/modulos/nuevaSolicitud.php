@@ -274,7 +274,6 @@ $renderTelefonoSolicitud = static function (array $config) use ($soloLectura, $t
     return ob_get_clean();
 };
 require_once 'vistas/partials/content_header.php';
-require_once 'vistas/partials/ux_hint.php';
 $accionesHeader = [
     [
         'label' => 'Volver a solicitudes',
@@ -350,10 +349,6 @@ ag_render_content_header([
 ?>
 <section class="content">
   <div class="container-fluid">
-    <?php ag_render_gear_actions_hint([
-        'title' => 'Botones de acción',
-        'message' => 'En el listado de solicitudes el icono de engrane concentra los botones de acción disponibles para cada folio.',
-    ]); ?>
     <?php if ($solicitudActual && ($solicitudActual['estado'] ?? '') === 'borrador' && !empty($solicitudActual['motivo_retorno'] ?? '')) : ?>
       <div class="callout <?php echo $puedeGestionar ? 'callout-info' : 'callout-warning'; ?>">
         <h5 class="mb-2"><i class="fas fa-undo-alt me-2"></i><?php echo $puedeGestionar ? 'Motivo del regreso a borrador' : 'Solicitud devuelta a borrador'; ?></h5>

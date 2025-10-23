@@ -211,7 +211,6 @@ if ($soloLecturaCompleto) {
 }
 
 require_once 'vistas/partials/content_header.php';
-require_once 'vistas/partials/ux_hint.php';
 $accionesHeader = [
     [
         'label' => 'Volver a contratos',
@@ -284,10 +283,6 @@ ag_render_content_header([
 
 <section class="content">
   <div class="container-fluid">
-    <?php ag_render_gear_actions_hint([
-        'title' => 'Botones de acción',
-        'message' => 'En el listado de contratos el icono de engrane agrupa los botones de acción disponibles para cada registro.',
-    ]); ?>
     <?php
     $contratoCancelado = $estaEditando && ($estatusContrato === 2
         || strtolower((string)($jsonContrato['estado'] ?? '')) === 'cancelado');

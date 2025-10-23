@@ -511,12 +511,94 @@ function agFormatRecordLabel(manager, rowData) {
     return manager.defaultLabel || '';
 }
 
+function agEnhanceActionMenu(container) {
+    if (!container) {
+        return;
+    }
+
+    const items = container.querySelectorAll('.ag-action-menu-item');
+    items.forEach((item) => {
+        if (item.dataset.agMenuEnhanced === '1') {
+            return;
+        }
+
+        item.dataset.agMenuEnhanced = '1';
+        if (!item.hasAttribute('tabindex')) {
+            item.setAttribute('tabindex', '0');
+        }
+
+        const control = item.querySelector('.ag-action-menu-trigger-control');
+        if (!control) {
+            return;
+        }
+
+        const isControlDisabled = () => {
+            if (control instanceof HTMLButtonElement || control instanceof HTMLInputElement) {
+                return control.disabled;
+            }
+
+            if (control instanceof HTMLAnchorElement) {
+                return control.classList.contains('disabled')
+                    || control.getAttribute('aria-disabled') === 'true';
+            }
+
+            return control.hasAttribute('disabled')
+                || control.classList.contains('disabled')
+                || control.getAttribute('aria-disabled') === 'true';
+        };
+
+        item.classList.toggle('ag-action-menu-item-disabled', isControlDisabled());
+
+        const triggerAction = () => {
+            if (isControlDisabled()) {
+                return;
+            }
+
+            if (control instanceof HTMLButtonElement || control instanceof HTMLInputElement) {
+                control.click();
+                return;
+            }
+
+            if (control instanceof HTMLAnchorElement) {
+                control.click();
+                return;
+            }
+
+            if (typeof control.click === 'function') {
+                control.click();
+            }
+        };
+
+        item.addEventListener('click', (event) => {
+            if (control.contains(event.target) || isControlDisabled()) {
+                return;
+            }
+            event.preventDefault();
+            triggerAction();
+        });
+
+        item.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                triggerAction();
+            }
+        });
+    });
+}
+
 function agRenderToolbarActions(manager, rowData) {
     if (!manager || !manager.menu) {
         return;
     }
 
-    if (!rowData || !rowData.acciones) {
+    const menuHtml = rowData && typeof rowData.acciones_menu === 'string'
+        ? rowData.acciones_menu.trim()
+        : '';
+    const legacyHtml = rowData && typeof rowData.acciones === 'string'
+        ? rowData.acciones.trim()
+        : '';
+
+    if (!rowData || (menuHtml === '' && legacyHtml === '')) {
         manager.menu.innerHTML = `<div class="dropdown-item-text ag-record-empty-hint">${manager.emptyMessage}</div>`;
         if (manager.gearButton) {
             manager.gearButton.disabled = true;
@@ -526,11 +608,17 @@ function agRenderToolbarActions(manager, rowData) {
     }
 
     manager.menu.innerHTML = '';
-    const wrapper = document.createElement('div');
-    wrapper.className = 'ag-table-ux-actions-wrapper';
-    wrapper.innerHTML = rowData.acciones;
-    manager.menu.appendChild(wrapper);
-    agConvertLabelsToPlaceholders(wrapper);
+
+    if (menuHtml !== '') {
+        manager.menu.innerHTML = menuHtml;
+        agEnhanceActionMenu(manager.menu);
+    } else {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'ag-table-ux-actions-wrapper';
+        wrapper.innerHTML = legacyHtml;
+        manager.menu.appendChild(wrapper);
+        agConvertLabelsToPlaceholders(wrapper);
+    }
 
     if (manager.gearButton) {
         manager.gearButton.disabled = false;
