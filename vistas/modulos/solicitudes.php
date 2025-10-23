@@ -203,7 +203,8 @@ ag_render_content_header([
       </div>
       <div class="ag-table-ux-section ag-table-ux-search">
         <div class="ag-table-ux-search-control">
-          <input type="search" class="form-control form-control-sm ag-table-ux-search-input" placeholder="Buscar en solicitudes">
+          <label for="buscarSolicitudes" class="form-label visually-hidden">Buscar en solicitudes</label>
+          <input type="search" id="buscarSolicitudes" class="form-control form-control-sm ag-table-ux-search-input" placeholder="Buscar en solicitudes">
           <button type="button" class="btn btn-outline-secondary btn-sm ag-table-ux-filter-toggle"<?php echo $hayFiltrosSolicitudes ? '' : ' disabled'; ?>>
             <i class="fas fa-filter me-1"></i> Filtros
           </button>

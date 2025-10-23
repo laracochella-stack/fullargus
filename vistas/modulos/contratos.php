@@ -170,19 +170,12 @@ ag_render_content_header([
                 </button>
               <?php endif; ?>
               <div class="ag-table-ux-current">Contratos</div>
-              <div class="dropdown ag-table-ux-actions">
-                <button class="btn btn-outline-secondary ag-table-ux-gear" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones del contrato" disabled>
-                  <i class="fas fa-cog"></i>
-                </button>
-                <div class="dropdown-menu dropdown-menu-end ag-table-ux-actions-menu">
-                  <div class="dropdown-item-text ag-record-empty-hint">Selecciona un contrato para ver acciones disponibles.</div>
-                </div>
-              </div>
             </div>
           </div>
           <div class="ag-table-ux-section ag-table-ux-search">
             <div class="ag-table-ux-search-control">
-              <input type="search" class="form-control form-control-sm ag-table-ux-search-input" placeholder="Buscar en contratos">
+              <label for="buscarContratos" class="form-label visually-hidden">Buscar en contratos</label>
+              <input type="search" id="buscarContratos" class="form-control form-control-sm ag-table-ux-search-input" placeholder="Buscar en contratos">
               <button type="button" class="btn btn-outline-secondary btn-sm ag-table-ux-filter-toggle">
                 <i class="fas fa-filter me-1"></i> Filtros
               </button>
