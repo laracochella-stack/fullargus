@@ -967,6 +967,7 @@ switch ($resource) {
 
             $accionesBotones[] = sprintf('<button type="button" class="btn btn-success btn-sm btnGenerarContrato" title="Generar documentos" data-contrato-id="%1$d"%2$s><i class="fas fa-file-word"></i></button>', $id, $esCancelado ? ' disabled' : '');
 
+            $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 3]);
 
             $jsonContrato = json_encode(
