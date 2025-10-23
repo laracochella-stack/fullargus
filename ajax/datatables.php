@@ -940,18 +940,14 @@ switch ($resource) {
                 ? '<input type="checkbox" class="select-contrato" disabled>'
                 : '<input type="checkbox" class="select-contrato">';
 
-            $accionesBotones = [
-                sprintf('<a href="index.php?ruta=crearContrato&amp;contrato_id=%1$d&amp;ver=1" class="btn btn-info btn-sm" title="Ver contrato"><i class="fas fa-eye"></i></a>', $id),
-                sprintf('<button type="button" class="btn btn-outline-info btn-sm btnVerPlaceholdersContrato" title="Ver placeholders" data-contrato-id="%1$d"><i class="fas fa-tags"></i></button>', $id),
-                sprintf('<a href="index.php?ruta=crearContrato&amp;contrato_id=%1$d" class="btn btn-primary btn-sm%2$s" title="Editar"%3$s><i class="fas fa-pen"></i></a>', $id, $esCancelado ? ' disabled' : '', $esCancelado ? ' aria-disabled="true" tabindex="-1"' : ''),
-            ];
-
-            if ($solicitudId > 0) {
-                $accionesBotones[] = sprintf('<a href="index.php?ruta=solicitudes&amp;solicitud_id=%1$d" class="btn btn-outline-secondary btn-sm" title="Ver solicitud de origen"><i class="fas fa-link"></i></a>', $solicitudId);
-            }
-
-            if (!$esCancelado) {
-                $accionesBotones[] = sprintf(
+            $btnVerContrato = sprintf('<a href="index.php?ruta=crearContrato&amp;contrato_id=%1$d&amp;ver=1" class="btn btn-info btn-sm" title="Ver contrato"><i class="fas fa-eye"></i></a>', $id);
+            $btnPlaceholders = sprintf('<button type="button" class="btn btn-outline-info btn-sm btnVerPlaceholdersContrato" title="Ver placeholders" data-contrato-id="%1$d"><i class="fas fa-tags"></i></button>', $id);
+            $btnEditarContrato = sprintf('<a href="index.php?ruta=crearContrato&amp;contrato_id=%1$d" class="btn btn-primary btn-sm%2$s" title="Editar"%3$s><i class="fas fa-pen"></i></a>', $id, $esCancelado ? ' disabled' : '', $esCancelado ? ' aria-disabled="true" tabindex="-1"' : '');
+            $btnVerSolicitud = $solicitudId > 0
+                ? sprintf('<a href="index.php?ruta=solicitudes&amp;solicitud_id=%1$d" class="btn btn-outline-secondary btn-sm" title="Ver solicitud de origen"><i class="fas fa-link"></i></a>', $solicitudId)
+                : '';
+            $btnCancelarContrato = !$esCancelado
+                ? sprintf(
                     '<form method="post" class="formCancelarContrato" action="index.php?ruta=contratos">'
                     . '<input type="hidden" name="csrf_token" value="%1$s">'
                     . '<input type="hidden" name="cancelarContrato" value="1">'
@@ -962,12 +958,23 @@ switch ($resource) {
                     . '</form>',
                     $escape($csrfToken),
                     $id
-                );
+                )
+                : '';
+            $btnGenerarContrato = sprintf('<button type="button" class="btn btn-success btn-sm btnGenerarContrato" title="Generar documentos" data-contrato-id="%1$d"%2$s><i class="fas fa-file-word"></i></button>', $id, $esCancelado ? ' disabled' : '');
+
+            $accionesBotones = [$btnVerContrato, $btnPlaceholders, $btnEditarContrato];
+
+            if ($btnVerSolicitud !== '') {
+                $accionesBotones[] = $btnVerSolicitud;
             }
 
-            $accionesBotones[] = sprintf('<button type="button" class="btn btn-success btn-sm btnGenerarContrato" title="Generar documentos" data-contrato-id="%1$d"%2$s><i class="fas fa-file-word"></i></button>', $id, $esCancelado ? ' disabled' : '');
+            if ($btnCancelarContrato !== '') {
+                $accionesBotones[] = $btnCancelarContrato;
+            }
 
-            $accionesMenu = $renderActionMenu($accionesBotones);
+            $accionesBotones[] = $btnGenerarContrato;
+
+            $accionesMenu = $renderActionMenu([$btnVerContrato, $btnEditarContrato, $btnGenerarContrato]);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 3]);
 
             $jsonContrato = json_encode(
