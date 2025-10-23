@@ -614,7 +614,7 @@ ag_render_record_toolbar([
       <div class="modal-body">
         <p class="mb-3 text-muted small">Se mostrarán las solicitudes que coincidan con el folio, RFC o CURP capturados en el contrato. Solo se listan solicitudes sin contrato vinculado.</p>
           <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2 mb-3">
-            <label for="filtroRapidoSolicitudes" class="form-label mb-0 small text-muted">Filtrar resultados</label>
+            <label for="filtroRapidoSolicitudes" class="form-label mb-0 small text-muted ag-keep-label">Filtrar resultados</label>
             <input type="search" id="filtroRapidoSolicitudes" class="form-control form-control-sm" placeholder="Buscar por folio, RFC, CURP o nombre" data-filtro-rapido>
           </div>
         <div class="alert alert-info d-none" data-estado-modal></div>
