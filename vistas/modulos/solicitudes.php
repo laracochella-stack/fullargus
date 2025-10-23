@@ -208,6 +208,73 @@ ag_render_content_header([
         <a href="index.php?ruta=solicitudes" class="btn btn-outline-secondary btn-sm">Ver todas las solicitudes</a>
       </div>
     <?php endif; ?>
+    <?php $hayFiltrosSolicitudes = $esGestorSolicitudes; ?>
+    <div class="ag-table-ux-bar" data-table="#tablaSolicitudes" data-default-label="Solicitudes" data-record-format="Solicitud #{folio} · {nombre}" data-record-key="folio" data-empty-message="Selecciona una solicitud para ver acciones disponibles.">
+      <div class="ag-table-ux-section ag-table-ux-primary">
+        <div class="ag-table-ux-primary">
+          <a href="index.php?ruta=nuevaSolicitud" class="btn btn-primary ag-table-ux-new">
+            <i class="fas fa-plus me-1"></i>
+            Nuevo
+          </a>
+          <div class="ag-table-ux-current">Solicitudes</div>
+          <div class="dropdown ag-table-ux-actions">
+            <button class="btn btn-outline-secondary ag-table-ux-gear" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones de la solicitud" disabled>
+              <i class="fas fa-cog"></i>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end ag-table-ux-actions-menu">
+              <div class="dropdown-item-text ag-record-empty-hint">Selecciona una solicitud para ver acciones disponibles.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ag-table-ux-section ag-table-ux-search">
+        <div class="ag-table-ux-search-control">
+          <input type="search" class="form-control form-control-sm ag-table-ux-search-input" placeholder="Buscar en solicitudes">
+          <button type="button" class="btn btn-outline-secondary btn-sm ag-table-ux-filter-toggle"<?php echo $hayFiltrosSolicitudes ? '' : ' disabled'; ?>>
+            <i class="fas fa-filter me-1"></i> Filtros
+          </button>
+        </div>
+        <div class="ag-table-ux-filter-panel">
+          <?php if ($esGestorSolicitudes) : ?>
+            <form id="filtrosSolicitudesForm" class="row g-3" autocomplete="off">
+              <div class="col-12 col-lg-4">
+                <label for="filtroEstadoSolicitudes" class="form-label mb-1">Estado</label>
+                <select class="form-select form-select-sm" id="filtroEstadoSolicitudes" name="estado">
+                  <?php foreach ($opcionesEstadoTabla as $valor => $etiqueta) : ?>
+                    <option value="<?php echo htmlspecialchars($valor, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $estadoFiltroSolicitudes === $valor ? 'selected' : ''; ?>><?php echo htmlspecialchars($etiqueta, ENT_QUOTES, 'UTF-8'); ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-12 col-lg-4">
+                <label for="filtroPropietarioSolicitudes" class="form-label mb-1">Propietario</label>
+                <select class="form-select form-select-sm" id="filtroPropietarioSolicitudes" name="propietario">
+                  <?php foreach ($opcionesPropietarioTabla as $valor => $etiqueta) : ?>
+                    <option value="<?php echo htmlspecialchars($valor, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $propietarioFiltroSolicitudes === $valor ? 'selected' : ''; ?>><?php echo htmlspecialchars($etiqueta, ENT_QUOTES, 'UTF-8'); ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-12 col-lg-4">
+                <div class="form-check form-switch mb-1">
+                  <input class="form-check-input" type="checkbox" id="switchCanceladas" name="verCanceladas" value="1" <?php echo $verCanceladas ? 'checked' : ''; ?>>
+                  <label class="form-check-label" for="switchCanceladas">Incluir canceladas</label>
+                </div>
+                <p class="form-text mb-0">Los filtros se aplican automáticamente al listado.</p>
+              </div>
+            </form>
+          <?php else : ?>
+            <p class="text-muted small mb-0">No cuentas con filtros adicionales para este listado.</p>
+          <?php endif; ?>
+        </div>
+      </div>
+      <div class="ag-table-ux-section ag-table-ux-pagination">
+        <div class="ag-table-ux-page-info">0-0</div>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Cambiar página">
+          <button type="button" class="btn btn-outline-secondary" data-page="prev" aria-label="Página anterior"><i class="fas fa-chevron-left"></i></button>
+          <button type="button" class="btn btn-outline-secondary" data-page="next" aria-label="Página siguiente"><i class="fas fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="ag-table-ux-section ag-table-ux-extra"></div>
+    </div>
     <?php
     $solicitudSeleccionadaCancelada = false;
     $motivoCancelacionSeleccionada = '';
@@ -269,37 +336,6 @@ ag_render_content_header([
         </ul>
       </div>
     <?php endif; ?>
-    <?php if ($esGestorSolicitudes) : ?>
-      <div class="card mb-3">
-        <div class="card-body">
-          <form id="filtrosSolicitudesForm" class="row g-3 align-items-end" autocomplete="off">
-            <div class="col-12 col-md-4">
-              <label for="filtroEstadoSolicitudes" class="form-label mb-1">Estado</label>
-              <select class="form-select form-select-sm" id="filtroEstadoSolicitudes" name="estado">
-                <?php foreach ($opcionesEstadoTabla as $valor => $etiqueta) : ?>
-                  <option value="<?php echo htmlspecialchars($valor, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $estadoFiltroSolicitudes === $valor ? 'selected' : ''; ?>><?php echo htmlspecialchars($etiqueta, ENT_QUOTES, 'UTF-8'); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="col-12 col-md-4">
-              <label for="filtroPropietarioSolicitudes" class="form-label mb-1">Propietario</label>
-              <select class="form-select form-select-sm" id="filtroPropietarioSolicitudes" name="propietario">
-                <?php foreach ($opcionesPropietarioTabla as $valor => $etiqueta) : ?>
-                  <option value="<?php echo htmlspecialchars($valor, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $propietarioFiltroSolicitudes === $valor ? 'selected' : ''; ?>><?php echo htmlspecialchars($etiqueta, ENT_QUOTES, 'UTF-8'); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="col-12 col-md-4">
-              <div class="form-check form-switch mb-1">
-                <input class="form-check-input" type="checkbox" id="switchCanceladas" name="verCanceladas" value="1" <?php echo $verCanceladas ? 'checked' : ''; ?>>
-                <label class="form-check-label" for="switchCanceladas">Incluir canceladas</label>
-              </div>
-              <p class="form-text mb-0">Los filtros se aplican automáticamente al listado.</p>
-            </div>
-          </form>
-        </div>
-      </div>
-    <?php endif; ?>
     <div class="card">
       <div class="card-header">
         <h3 class="card-title">Listado de solicitudes</h3>
@@ -331,7 +367,7 @@ ag_render_content_header([
               <th scope="col" class="min-tablet-l">Fecha</th>
               <th scope="col" class="min-desktop">Propietario</th>
               <th scope="col" class="min-desktop">Contrato</th>
-              <th scope="col" class="all no-sort">Acciones</th>
+              <th scope="col" class="d-none">Acciones</th>
             </tr>
           </thead>
           <tbody></tbody>

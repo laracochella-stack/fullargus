@@ -256,7 +256,519 @@ const agSwalHelpers = (() => {
     return helpers;
 })();
 
+const agCssEscape = (value) => {
+    const texto = value == null ? '' : String(value);
+    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+        return CSS.escape(texto);
+    }
+
+    return texto.replace(/(["'\\#;?%&,.+*~`^$\[\]()=>|/@])/g, '\\$1');
+};
+
+const agHtmlHelper = typeof document !== 'undefined' ? document.createElement('div') : null;
+
+const agDecodeHtml = (value) => {
+    if (!agHtmlHelper) {
+        return value == null ? '' : String(value);
+    }
+
+    agHtmlHelper.innerHTML = value == null ? '' : String(value);
+    const texto = agHtmlHelper.textContent || '';
+    agHtmlHelper.innerHTML = '';
+    return texto;
+};
+
+const agStripHtml = (value) => {
+    if (!agHtmlHelper) {
+        return value == null ? '' : String(value);
+    }
+
+    agHtmlHelper.innerHTML = value == null ? '' : String(value);
+    const texto = agHtmlHelper.textContent || '';
+    agHtmlHelper.innerHTML = '';
+    return texto.trim();
+};
+
+const AG_INPUT_SELECTOR = 'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([data-ag-skip-placeholder]), textarea:not([data-ag-skip-placeholder]), select:not([data-ag-skip-placeholder])';
+
+const tableUxManagers = new Map();
+
+function agConvertLabelsToPlaceholders(root = document) {
+    if (typeof document === 'undefined' || !root) {
+        return;
+    }
+
+    const scope = root instanceof Element || root instanceof Document ? root : document;
+    const fields = scope.querySelectorAll(AG_INPUT_SELECTOR);
+
+    fields.forEach((input) => {
+        if (input.dataset.agPlaceholderApplied === '1') {
+            input.classList.add('ag-input-underlined');
+            return;
+        }
+
+        const tagName = input.tagName.toLowerCase();
+        if (tagName === 'select' && input.hasAttribute('data-ag-keep-label')) {
+            input.classList.add('ag-input-underlined');
+            input.dataset.agPlaceholderApplied = '1';
+            return;
+        }
+
+        let label = null;
+        const inputId = input.getAttribute('id');
+        if (inputId) {
+            const selector = `label[for="${agCssEscape(inputId)}"]`;
+            label = scope.querySelector(selector) || document.querySelector(selector);
+        }
+
+        if (!label) {
+            const closestLabel = input.closest('label');
+            if (closestLabel) {
+                label = closestLabel;
+            }
+        }
+
+        if (label && label.classList.contains('ag-keep-label')) {
+            input.classList.add('ag-input-underlined');
+            input.dataset.agPlaceholderApplied = '1';
+            return;
+        }
+
+        const labelText = label ? agStripHtml(label.textContent || '') : '';
+
+        if (labelText && !input.getAttribute('placeholder') && tagName !== 'select') {
+            input.setAttribute('placeholder', labelText);
+        }
+
+        if (labelText && tagName === 'select' && !input.getAttribute('data-placeholder')) {
+            input.setAttribute('data-placeholder', labelText);
+        }
+
+        if (label && !label.classList.contains('ag-placeholder-label')) {
+            label.classList.add('ag-placeholder-label');
+        }
+
+        input.classList.add('ag-input-underlined');
+        input.dataset.agPlaceholderApplied = '1';
+    });
+}
+
+function agSetupTableUxBars() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    document.querySelectorAll('.ag-table-ux-bar[data-table]').forEach((bar) => {
+        const tableSelector = bar.getAttribute('data-table');
+        if (!tableSelector) {
+            return;
+        }
+
+        const manager = tableUxManagers.get(tableSelector) || {};
+        if (manager.markupInitialized) {
+            return;
+        }
+
+        manager.bar = bar;
+        manager.tableSelector = tableSelector;
+        manager.searchInput = bar.querySelector('.ag-table-ux-search-input');
+        manager.filterToggle = bar.querySelector('.ag-table-ux-filter-toggle');
+        manager.filterPanel = bar.querySelector('.ag-table-ux-filter-panel');
+        manager.currentLabelEl = bar.querySelector('.ag-table-ux-current');
+        manager.gearButton = bar.querySelector('.ag-table-ux-gear');
+        manager.menu = bar.querySelector('.ag-table-ux-actions-menu');
+        manager.pageInfoEl = bar.querySelector('.ag-table-ux-page-info');
+        manager.prevBtn = bar.querySelector('[data-page="prev"]');
+        manager.nextBtn = bar.querySelector('[data-page="next"]');
+        manager.newButton = bar.querySelector('.ag-table-ux-new');
+        manager.defaultLabel = bar.getAttribute('data-default-label')
+            || bar.dataset.defaultLabel
+            || (manager.currentLabelEl ? manager.currentLabelEl.textContent.trim() : '');
+        manager.recordFormat = bar.getAttribute('data-record-format') || bar.dataset.recordFormat || '';
+        manager.emptyMessage = bar.getAttribute('data-empty-message') || bar.dataset.emptyMessage || 'Selecciona un registro de la tabla.';
+        manager.recordKeyField = bar.getAttribute('data-record-key') || bar.dataset.recordKey || '';
+        manager.markupInitialized = true;
+        manager.currentRowKey = '';
+        manager.currentRowData = null;
+
+        if (manager.gearButton) {
+            manager.gearButton.disabled = true;
+            manager.gearButton.setAttribute('aria-disabled', 'true');
+        }
+
+        if (manager.menu) {
+            manager.menu.innerHTML = `<div class="dropdown-item-text ag-record-empty-hint">${manager.emptyMessage}</div>`;
+        }
+
+        if (manager.filterPanel) {
+            agConvertLabelsToPlaceholders(manager.filterPanel);
+            manager.filterPanel.classList.remove('is-open');
+        }
+
+        if (manager.filterToggle && manager.filterPanel && !manager.filterListenersReady) {
+            const togglePanel = (forceOpen = null) => {
+                const isOpen = manager.filterPanel.classList.contains('is-open');
+                const nextState = forceOpen === null ? !isOpen : Boolean(forceOpen);
+                if (nextState) {
+                    manager.filterPanel.classList.add('is-open');
+                } else {
+                    manager.filterPanel.classList.remove('is-open');
+                }
+            };
+
+            manager.filterToggle.addEventListener('click', (event) => {
+                event.preventDefault();
+                togglePanel();
+            });
+
+            if (manager.searchInput) {
+                manager.searchInput.addEventListener('focus', () => {
+                    togglePanel(true);
+                });
+            }
+
+            document.addEventListener('click', (event) => {
+                if (!manager.filterPanel.classList.contains('is-open')) {
+                    return;
+                }
+                if (manager.bar.contains(event.target)) {
+                    return;
+                }
+                togglePanel(false);
+            });
+
+            manager.filterPanel.addEventListener('click', (event) => {
+                event.stopPropagation();
+            });
+
+            manager.closeFilterPanel = () => togglePanel(false);
+            manager.filterListenersReady = true;
+        }
+
+        tableUxManagers.set(tableSelector, manager);
+    });
+}
+
+function agGetRowValue(rowData, key) {
+    if (!rowData || !key) {
+        return '';
+    }
+
+    const attrs = rowData.DT_RowAttr || rowData.rowAttrs || {};
+    const candidates = [];
+    if (key.startsWith('data-')) {
+        candidates.push(key);
+        const plainKey = key.replace(/^data-/, '');
+        candidates.push(plainKey);
+    } else {
+        candidates.push(`data-${key}`);
+        candidates.push(`data-${key.replace(/_/g, '-')}`);
+        candidates.push(key);
+    }
+
+    for (const candidate of candidates) {
+        if (Object.prototype.hasOwnProperty.call(attrs, candidate) && attrs[candidate] != null) {
+            return agDecodeHtml(attrs[candidate]);
+        }
+    }
+
+    const value = rowData[key];
+    if (typeof value === 'string') {
+        return agStripHtml(value);
+    }
+
+    if (value === null || typeof value === 'undefined') {
+        return '';
+    }
+
+    return String(value);
+}
+
+function agFormatRecordLabel(manager, rowData) {
+    if (!manager || !rowData) {
+        return manager && manager.defaultLabel ? manager.defaultLabel : '';
+    }
+
+    const format = manager.recordFormat;
+    if (format) {
+        return format.replace(/\{([^}]+)\}/g, (_, token) => {
+            const clave = token == null ? '' : String(token).trim();
+            if (!clave) {
+                return '';
+            }
+            return agGetRowValue(rowData, clave) || '';
+        }).replace(/\s{2,}/g, ' ').trim();
+    }
+
+    const fallbackFields = ['nombre', 'folio', 'cliente', 'propietario', 'id'];
+    for (const field of fallbackFields) {
+        const valor = agGetRowValue(rowData, field);
+        if (valor) {
+            return valor;
+        }
+    }
+
+    return manager.defaultLabel || '';
+}
+
+function agRenderToolbarActions(manager, rowData) {
+    if (!manager || !manager.menu) {
+        return;
+    }
+
+    if (!rowData || !rowData.acciones) {
+        manager.menu.innerHTML = `<div class="dropdown-item-text ag-record-empty-hint">${manager.emptyMessage}</div>`;
+        if (manager.gearButton) {
+            manager.gearButton.disabled = true;
+            manager.gearButton.setAttribute('aria-disabled', 'true');
+        }
+        return;
+    }
+
+    manager.menu.innerHTML = '';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'ag-table-ux-actions-wrapper';
+    wrapper.innerHTML = rowData.acciones;
+    manager.menu.appendChild(wrapper);
+    agConvertLabelsToPlaceholders(wrapper);
+
+    if (manager.gearButton) {
+        manager.gearButton.disabled = false;
+        manager.gearButton.removeAttribute('aria-disabled');
+    }
+}
+
+function agUpdateToolbarDisplay(manager, rowData) {
+    if (!manager) {
+        return;
+    }
+
+    if (!rowData) {
+        if (manager.currentLabelEl) {
+            manager.currentLabelEl.textContent = manager.defaultLabel || '';
+        }
+        if (manager.gearButton) {
+            manager.gearButton.disabled = true;
+            manager.gearButton.setAttribute('aria-disabled', 'true');
+        }
+        if (manager.menu) {
+            manager.menu.innerHTML = `<div class="dropdown-item-text ag-record-empty-hint">${manager.emptyMessage}</div>`;
+        }
+        manager.currentRowData = null;
+        return;
+    }
+
+    if (manager.currentLabelEl) {
+        manager.currentLabelEl.textContent = agFormatRecordLabel(manager, rowData);
+    }
+
+    agRenderToolbarActions(manager, rowData);
+    manager.currentRowData = rowData;
+}
+
+function agResetToolbar(manager) {
+    if (!manager) {
+        return;
+    }
+
+    manager.currentRowKey = '';
+    manager.currentRowData = null;
+    agUpdateToolbarDisplay(manager, null);
+}
+
+function agHandleRowSelection(manager, instance, rowElement, rowData) {
+    if (!manager || !instance || !rowElement) {
+        return;
+    }
+
+    const table = rowElement.closest('table');
+    if (table) {
+        table.querySelectorAll('tbody tr.ag-row-selected').forEach((tr) => {
+            if (tr !== rowElement) {
+                tr.classList.remove('ag-row-selected');
+            }
+        });
+    }
+
+    rowElement.classList.add('ag-row-selected');
+
+    if (manager.recordKeyField) {
+        const keyValor = agGetRowValue(rowData, manager.recordKeyField);
+        manager.currentRowKey = keyValor || '';
+    }
+
+    agUpdateToolbarDisplay(manager, rowData);
+}
+
+function agInitializeTableInteractions(manager, instance, tableElement) {
+    if (!manager || !instance || !tableElement) {
+        return;
+    }
+
+    manager.instance = instance;
+
+    if (!manager.pageInfoBound && manager.pageInfoEl) {
+        manager.updatePageInfo = () => {
+            if (!manager.instance || !manager.pageInfoEl) {
+                return;
+            }
+            const info = manager.instance.page.info();
+            if (!info) {
+                manager.pageInfoEl.textContent = '0-0';
+                return;
+            }
+            const start = info.recordsDisplay === 0 ? 0 : info.start + 1;
+            const end = info.end;
+            manager.pageInfoEl.textContent = `${start}-${end}`;
+        };
+
+        const handleDraw = () => {
+            manager.updatePageInfo();
+
+            if (manager.recordKeyField && manager.currentRowKey) {
+                let restored = false;
+                manager.instance.rows().every(function () {
+                    const data = this.data();
+                    if (!data) {
+                        return undefined;
+                    }
+                    const value = agGetRowValue(data, manager.recordKeyField);
+                    if (value && value === manager.currentRowKey) {
+                        const node = this.node();
+                        if (node && node.nodeType === 1) {
+                            const tbody = tableElement.tBodies[0];
+                            if (tbody) {
+                                tbody.querySelectorAll('tr.ag-row-selected').forEach((tr) => {
+                                    if (tr !== node) {
+                                        tr.classList.remove('ag-row-selected');
+                                    }
+                                });
+                            }
+                            node.classList.add('ag-row-selected');
+                            agUpdateToolbarDisplay(manager, data);
+                            restored = true;
+                        }
+                        return false;
+                    }
+                    return undefined;
+                });
+
+                if (!restored) {
+                    agResetToolbar(manager);
+                    if (tableElement.tBodies[0]) {
+                        tableElement.tBodies[0].querySelectorAll('tr.ag-row-selected').forEach((tr) => tr.classList.remove('ag-row-selected'));
+                    }
+                }
+            } else {
+                agResetToolbar(manager);
+                if (tableElement.tBodies[0]) {
+                    tableElement.tBodies[0].querySelectorAll('tr.ag-row-selected').forEach((tr) => tr.classList.remove('ag-row-selected'));
+                }
+            }
+        };
+
+        manager.updatePageInfo();
+
+        if (!manager.drawListenerBound) {
+            if (typeof window !== 'undefined' && typeof window.jQuery === 'function') {
+                window.jQuery(tableElement).on('draw.dt.agUx', handleDraw);
+                manager.drawListenerBound = true;
+            } else if (typeof $ === 'function') {
+                $(tableElement).on('draw.dt.agUx', handleDraw);
+                manager.drawListenerBound = true;
+            } else if (typeof manager.instance.on === 'function') {
+                manager.instance.on('draw', handleDraw);
+                manager.drawListenerBound = true;
+            }
+        }
+
+        manager.pageInfoBound = true;
+    }
+
+    if (manager.searchInput && !manager.searchBound) {
+        manager.searchInput.addEventListener('input', (event) => {
+            const value = event.target.value || '';
+            manager.instance.search(value).draw();
+        });
+        manager.searchBound = true;
+    }
+
+    if (manager.prevBtn && !manager.prevBound) {
+        manager.prevBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            manager.instance.page('previous').draw('page');
+        });
+        manager.prevBound = true;
+    }
+
+    if (manager.nextBtn && !manager.nextBound) {
+        manager.nextBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            manager.instance.page('next').draw('page');
+        });
+        manager.nextBound = true;
+    }
+
+    if (!manager.bodyListenerBound && tableElement.tBodies[0]) {
+        tableElement.tBodies[0].addEventListener('click', (event) => {
+            const cell = event.target.closest('td');
+            if (!cell || cell.classList.contains('dataTables_empty') || cell.classList.contains('dtr-control')) {
+                return;
+            }
+
+            const rowElement = cell.closest('tr');
+            if (!rowElement || rowElement.classList.contains('child')) {
+                return;
+            }
+
+            const row = manager.instance.row(rowElement);
+            if (!row || !row.data) {
+                return;
+            }
+
+            const data = row.data();
+            if (!data) {
+                return;
+            }
+
+            agHandleRowSelection(manager, manager.instance, rowElement, data);
+        });
+
+        manager.bodyListenerBound = true;
+    }
+
+    agResetToolbar(manager);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    agConvertLabelsToPlaceholders(document);
+    agSetupTableUxBars();
+
+    document.addEventListener('shown.bs.modal', (event) => {
+        if (event && event.target) {
+            agConvertLabelsToPlaceholders(event.target);
+        }
+    });
+
+    document.addEventListener('ag:datatable:ready', (event) => {
+        if (!event || typeof event.detail !== 'object' || !event.detail.element) {
+            return;
+        }
+
+        const tableElement = event.detail.element;
+        if (!tableElement.id) {
+            return;
+        }
+
+        const selector = `#${tableElement.id}`;
+        const manager = tableUxManagers.get(selector);
+        if (!manager) {
+            return;
+        }
+
+        agInitializeTableInteractions(manager, event.detail.instance, tableElement);
+    });
+
     const sweetAlertDisponible = typeof Swal !== 'undefined' && typeof Swal.fire === 'function';
 
     const swalHelpers = (typeof window !== 'undefined' && window.agSwalHelpers)
@@ -2580,7 +3092,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     { data: 'nombre', responsivePriority: 1 },
                     { data: 'email', responsivePriority: 3 },
                     { data: 'estado', responsivePriority: 2 },
-                    { data: 'acciones', orderable: false, searchable: false, responsivePriority: 1 }
+                    { data: 'acciones', orderable: false, searchable: false, responsivePriority: 1, visible: false, className: 'd-none ag-table-acciones' }
                 ]
             },
             '#tablaDesarrollos': {
@@ -2636,7 +3148,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     { data: 'cliente', responsivePriority: 2 },
                     { data: 'desarrollo', responsivePriority: 2 },
                     { data: 'estado', responsivePriority: 1 },
-                    { data: 'acciones', orderable: false, searchable: false, responsivePriority: 1 }
+                    { data: 'acciones', orderable: false, searchable: false, responsivePriority: 1, visible: false, className: 'd-none ag-table-acciones' }
                 ]
             },
             '#tablaSolicitudes': {
@@ -2649,7 +3161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     { data: 'fecha', responsivePriority: 4 },
                     { data: 'responsable', responsivePriority: 3 },
                     { data: 'contrato', responsivePriority: 2, searchable: false },
-                    { data: 'acciones', orderable: false, searchable: false, responsivePriority: 1 }
+                    { data: 'acciones', orderable: false, searchable: false, responsivePriority: 1, visible: false, className: 'd-none ag-table-acciones' }
                 ]
             },
             '#tablaPlantillasSolicitud': {

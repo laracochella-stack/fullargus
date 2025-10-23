@@ -164,34 +164,83 @@ ag_render_content_header([
         <h3 class="card-title">Listado de contratos</h3>
       </div>
       <div class="card-body">
-        <div class="ag-table-toolbar d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
-          <div class="ag-table-toolbar-filters d-flex flex-wrap gap-2" role="group" aria-label="Filtrar contratos por estado">
-            <?php foreach ($opcionesEstado as $estado => $config) :
-                $urlEstado = htmlspecialchars($buildEstadoUrl($estado), ENT_QUOTES);
-                $activo = $estadoFiltro === $estado;
-                $claseBoton = $activo ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary';
-            ?>
-              <a href="<?php echo $urlEstado; ?>" class="<?php echo $claseBoton; ?> ag-filter-chip"<?php echo $activo ? ' aria-current="true"' : ''; ?>>
-                <i class="fas <?php echo htmlspecialchars($config['icon']); ?>"></i>
-                <span class="ms-1"><?php echo htmlspecialchars($config['label']); ?></span>
-              </a>
-            <?php endforeach; ?>
-          </div>
-          <div class="ag-table-toolbar-controls d-flex flex-wrap align-items-end gap-3">
-            <div class="ag-toolbar-field">
-              <label class="form-label mb-1" for="filtroDesarrollo">Filtrar por desarrollo</label>
-              <select id="filtroDesarrollo" class="form-select form-select-sm">
-                <option value="">Todos</option>
-                <?php foreach ($desarrollosLista as $des) : ?>
-                  <option value="<?php echo htmlspecialchars($des, ENT_QUOTES); ?>"><?php echo htmlspecialchars($des); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="ag-bulk-actions" id="accionesContrato" style="display:none;">
-              <h5 class="ag-bulk-actions__title mb-2">Acciones para <span id="selCount">0</span> seleccionados</h5>
-              <div id="contenedorBotones" class="d-flex flex-wrap gap-2"></div>
+        <?php $puedeCrearContrato = in_array($permisoActual, ['moderator', 'senior', 'owner', 'admin'], true); ?>
+        <div class="ag-table-ux-bar" data-table="#tablaContratos" data-default-label="Contratos" data-record-format="Contrato #{folio} · {cliente}" data-record-key="id" data-empty-message="Selecciona un contrato para ver acciones disponibles.">
+          <div class="ag-table-ux-section ag-table-ux-primary">
+            <div class="ag-table-ux-primary">
+              <?php if ($puedeCrearContrato) : ?>
+                <a href="index.php?ruta=crearContrato" class="btn btn-primary ag-table-ux-new">
+                  <i class="fas fa-file-signature me-1"></i>
+                  Nuevo
+                </a>
+              <?php else : ?>
+                <button type="button" class="btn btn-outline-secondary ag-table-ux-new" disabled title="No tienes permisos para crear contratos">
+                  <i class="fas fa-file-signature me-1"></i>
+                  Nuevo
+                </button>
+              <?php endif; ?>
+              <div class="ag-table-ux-current">Contratos</div>
+              <div class="dropdown ag-table-ux-actions">
+                <button class="btn btn-outline-secondary ag-table-ux-gear" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones del contrato" disabled>
+                  <i class="fas fa-cog"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end ag-table-ux-actions-menu">
+                  <div class="dropdown-item-text ag-record-empty-hint">Selecciona un contrato para ver acciones disponibles.</div>
+                </div>
+              </div>
             </div>
           </div>
+          <div class="ag-table-ux-section ag-table-ux-search">
+            <div class="ag-table-ux-search-control">
+              <input type="search" class="form-control form-control-sm ag-table-ux-search-input" placeholder="Buscar en contratos">
+              <button type="button" class="btn btn-outline-secondary btn-sm ag-table-ux-filter-toggle">
+                <i class="fas fa-filter me-1"></i> Filtros
+              </button>
+            </div>
+            <div class="ag-table-ux-filter-panel">
+              <div class="mb-3">
+                <p class="text-muted small fw-semibold mb-2">Estado</p>
+                <div class="d-flex flex-wrap gap-2">
+                  <?php foreach ($opcionesEstado as $estado => $config) :
+                      $urlEstado = htmlspecialchars($buildEstadoUrl($estado), ENT_QUOTES);
+                      $activo = $estadoFiltro === $estado;
+                      $claseBoton = $activo ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary';
+                  ?>
+                    <a href="<?php echo $urlEstado; ?>" class="<?php echo $claseBoton; ?> ag-filter-chip"<?php echo $activo ? ' aria-current="true"' : ''; ?>>
+                      <i class="fas <?php echo htmlspecialchars($config['icon']); ?>"></i>
+                      <span class="ms-1"><?php echo htmlspecialchars($config['label']); ?></span>
+                    </a>
+                  <?php endforeach; ?>
+                </div>
+              </div>
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <label class="form-label mb-1" for="filtroDesarrollo">Filtrar por desarrollo</label>
+                  <select id="filtroDesarrollo" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <?php foreach ($desarrollosLista as $des) : ?>
+                      <option value="<?php echo htmlspecialchars($des, ENT_QUOTES); ?>"<?php echo isset($_GET['desarrollo']) && $_GET['desarrollo'] === $des ? ' selected' : ''; ?>><?php echo htmlspecialchars($des); ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="col-12 col-md-6 align-self-end">
+                  <p class="form-text mb-0">Selecciona filtros para actualizar automáticamente el listado.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ag-table-ux-section ag-table-ux-pagination">
+            <div class="ag-table-ux-page-info">0-0</div>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Cambiar página">
+              <button type="button" class="btn btn-outline-secondary" data-page="prev" aria-label="Página anterior"><i class="fas fa-chevron-left"></i></button>
+              <button type="button" class="btn btn-outline-secondary" data-page="next" aria-label="Página siguiente"><i class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+          <div class="ag-table-ux-section ag-table-ux-extra"></div>
+        </div>
+        <div class="ag-bulk-actions" id="accionesContrato" style="display:none;">
+          <h5 class="ag-bulk-actions__title mb-2">Acciones para <span id="selCount">0</span> seleccionados</h5>
+          <div id="contenedorBotones" class="d-flex flex-wrap gap-2"></div>
         </div>
         <p class="text-muted small mb-3">Mostrando <?php echo htmlspecialchars($descripcionFiltro); ?>.</p>
         <div class="table-responsive">
@@ -223,7 +272,7 @@ ag_render_content_header([
                 <th scope="col" class="all">Cliente</th>
                 <th scope="col" class="min-tablet">Desarrollo</th>
                 <th scope="col" class="min-tablet">Estado</th>
-                <th scope="col" class="all no-sort">Acciones</th>
+                <th scope="col" class="d-none">Acciones</th>
               </tr>
             </thead>
             <tbody></tbody>
