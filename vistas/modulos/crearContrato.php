@@ -211,14 +211,6 @@ if ($soloLecturaCompleto) {
 }
 
 require_once 'vistas/partials/content_header.php';
-$accionesHeader = [
-    [
-        'label' => 'Volver a contratos',
-        'url' => 'index.php?ruta=contratos',
-        'icon' => 'fas fa-arrow-left',
-        'class' => 'btn-outline-secondary'
-    ],
-];
 ag_render_content_header([
     'title' => $tituloPagina,
     'subtitle' => $estaEditando ? 'Actualiza los datos del contrato seleccionado.' : 'Completa la información para generar un nuevo contrato.',
@@ -227,7 +219,6 @@ ag_render_content_header([
         ['label' => 'Contratos', 'url' => 'index.php?ruta=contratos'],
         ['label' => $tituloPagina],
     ],
-    'actions' => $accionesHeader,
 ]);
 require_once 'vistas/partials/record_toolbar.php';
 

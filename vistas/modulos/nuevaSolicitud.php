@@ -276,14 +276,6 @@ $renderTelefonoSolicitud = static function (array $config) use ($soloLectura, $t
     return ob_get_clean();
 };
 require_once 'vistas/partials/content_header.php';
-$accionesHeader = [
-    [
-        'label' => 'Volver a solicitudes',
-        'url' => 'index.php?ruta=solicitudes',
-        'icon' => 'fas fa-arrow-left',
-        'class' => 'btn-outline-secondary'
-    ],
-];
 $tituloSolicitud = $solicitudActual
     ? ($modoVisualizacion ? 'Detalle de la solicitud' : 'Editar solicitud')
     : 'Nueva solicitud';
@@ -300,7 +292,6 @@ ag_render_content_header([
         ['label' => 'Solicitudes', 'url' => 'index.php?ruta=solicitudes'],
         ['label' => $tituloSolicitud],
     ],
-    'actions' => $accionesHeader,
 ]);
 require_once 'vistas/partials/record_toolbar.php';
 

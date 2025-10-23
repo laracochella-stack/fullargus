@@ -113,18 +113,6 @@ ag_render_content_header([
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Desarrollos'],
     ],
-    'actions' => [
-        [
-            'label' => 'Registrar desarrollo',
-            'url' => '#',
-            'icon' => 'fas fa-plus',
-            'class' => 'btn-success',
-            'attributes' => [
-                'data-bs-toggle' => 'modal',
-                'data-bs-target' => '#modalNuevoDesarrollo'
-            ],
-        ],
-    ],
 ]);
 ?>
 <section class="content">

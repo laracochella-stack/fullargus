@@ -155,31 +155,6 @@ $estadoColores = [
 ?>
 <?php
 require_once 'vistas/partials/content_header.php';
-$accionesHeader = [
-    [
-        'label' => 'Nueva solicitud',
-        'url' => 'index.php?ruta=nuevaSolicitud',
-        'icon' => 'fas fa-plus',
-        'class' => 'btn-primary'
-    ],
-];
-if ($esGestorSolicitudes) {
-    if ($verCanceladas) {
-        $accionesHeader[] = [
-            'label' => 'Ver activas',
-            'url' => 'index.php?ruta=solicitudes',
-            'icon' => 'fas fa-clipboard-check',
-            'class' => 'btn-outline-secondary'
-        ];
-    } else {
-        $accionesHeader[] = [
-            'label' => 'Ver canceladas',
-            'url' => 'index.php?ruta=solicitudes&verCanceladas=1',
-            'icon' => 'fas fa-ban',
-            'class' => 'btn-outline-secondary'
-        ];
-    }
-}
 ag_render_content_header([
     'title' => 'Solicitudes',
     'subtitle' => $esGestorSolicitudes ? 'Administra las solicitudes recibidas y su estado.' : 'Consulta y da seguimiento a tus solicitudes.',
@@ -187,7 +162,6 @@ ag_render_content_header([
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Solicitudes'],
     ],
-    'actions' => $accionesHeader,
 ]);
 ?>
 <section class="content">
@@ -357,7 +331,7 @@ ag_render_content_header([
             $tablaSolicitudesJson = '{}';
         }
         ?>
-        <table class="table table-striped align-middle ag-data-table" id="tablaSolicitudes" data-es-gestor="<?php echo $esGestorSolicitudes ? '1' : '0'; ?>" data-dt-resource="solicitudes" data-dt-params="<?php echo htmlspecialchars($tablaSolicitudesJson, ENT_QUOTES, 'UTF-8'); ?>">
+        <table class="table table-striped table-hover align-middle ag-data-table" id="tablaSolicitudes" data-es-gestor="<?php echo $esGestorSolicitudes ? '1' : '0'; ?>" data-dt-resource="solicitudes" data-dt-params="<?php echo htmlspecialchars($tablaSolicitudesJson, ENT_QUOTES, 'UTF-8'); ?>" data-datatable-options='{"dom":"rtip"}'>
           <thead>
             <tr>
               <th scope="col" class="control" data-priority="1"></th>
