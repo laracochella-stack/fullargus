@@ -160,6 +160,173 @@ $renderActionButtons = static function (array $items, array $options = []): stri
     return $html;
 };
 
+$renderActionMenu = static function (array $items): string {
+    $bootstrapClasses = [
+        'btn',
+        'btn-sm',
+        'btn-xs',
+        'btn-primary',
+        'btn-secondary',
+        'btn-success',
+        'btn-danger',
+        'btn-warning',
+        'btn-info',
+        'btn-light',
+        'btn-dark',
+        'btn-outline-primary',
+        'btn-outline-secondary',
+        'btn-outline-success',
+        'btn-outline-danger',
+        'btn-outline-warning',
+        'btn-outline-info',
+        'btn-outline-light',
+        'btn-outline-dark',
+    ];
+
+    $menuItems = [];
+
+    foreach ($items as $itemHtml) {
+        $itemHtml = trim((string)$itemHtml);
+        if ($itemHtml === '') {
+            continue;
+        }
+
+        $wrapperHtml = '<div>' . $itemHtml . '</div>';
+        $doc = new DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+        if (!$doc->loadHTML($wrapperHtml, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD)) {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+            continue;
+        }
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $container = $doc->documentElement;
+        if (!$container) {
+            continue;
+        }
+
+        $actionElement = null;
+        foreach ($container->childNodes as $childNode) {
+            if ($childNode->nodeType === XML_ELEMENT_NODE) {
+                $actionElement = $childNode;
+                break;
+            }
+        }
+
+        if (!$actionElement) {
+            continue;
+        }
+
+        $controlElement = $actionElement;
+        if (strcasecmp($actionElement->nodeName, 'form') === 0) {
+            foreach ($actionElement->childNodes as $childNode) {
+                if ($childNode->nodeType === XML_ELEMENT_NODE) {
+                    $controlElement = $childNode;
+                    break;
+                }
+            }
+        }
+
+        if (!$controlElement) {
+            continue;
+        }
+
+        $classAttr = $controlElement->getAttribute('class');
+        $classList = $classAttr !== '' ? preg_split('/\s+/', $classAttr) : [];
+        $classList = array_filter($classList, static function ($class) use ($bootstrapClasses) {
+            return $class !== '' && !in_array($class, $bootstrapClasses, true);
+        });
+        $classList[] = 'ag-action-menu-trigger-control';
+        $classList = array_values(array_unique($classList));
+        $controlElement->setAttribute('class', implode(' ', $classList));
+
+        if (strcasecmp($controlElement->nodeName, 'button') === 0 && !$controlElement->hasAttribute('type')) {
+            $controlElement->setAttribute('type', 'button');
+        }
+
+        $labelElement = $controlElement;
+        if (strcasecmp($controlElement->nodeName, 'form') === 0) {
+            $labelElement = $controlElement;
+        }
+
+        if (!$labelElement) {
+            continue;
+        }
+
+        $label = trim((string)$labelElement->getAttribute('title'));
+        if ($label === '') {
+            $label = trim((string)$labelElement->textContent);
+        }
+        if ($label === '') {
+            $label = 'Acción';
+        }
+
+        $textNodes = [];
+        foreach ($controlElement->childNodes as $childNode) {
+            if ($childNode->nodeType === XML_TEXT_NODE) {
+                $texto = trim((string)$childNode->textContent);
+                if ($texto !== '') {
+                    $textNodes[] = $childNode;
+                }
+            }
+        }
+
+        foreach ($textNodes as $textNode) {
+            $controlElement->removeChild($textNode);
+        }
+
+        $hasVisualContent = false;
+        foreach ($controlElement->childNodes as $childNode) {
+            if ($childNode->nodeType === XML_ELEMENT_NODE) {
+                $hasVisualContent = true;
+                break;
+            }
+            if ($childNode->nodeType === XML_TEXT_NODE && trim((string)$childNode->textContent) !== '') {
+                $hasVisualContent = true;
+                break;
+            }
+        }
+
+        if (!$hasVisualContent && $label !== '') {
+            $initial = function_exists('mb_substr')
+                ? mb_substr($label, 0, 1, 'UTF-8')
+                : substr($label, 0, 1);
+            if ($initial === false) {
+                $initial = '';
+            }
+            $initial = function_exists('mb_strtoupper')
+                ? mb_strtoupper($initial, 'UTF-8')
+                : strtoupper((string)$initial);
+            if ($initial !== '') {
+                $initialSpan = $doc->createElement('span', $initial);
+                if ($initialSpan) {
+                    $initialSpan->setAttribute('class', 'ag-action-menu-trigger-initial');
+                    $controlElement->appendChild($initialSpan);
+                }
+            }
+        }
+
+        $actionMarkup = $doc->saveHTML($actionElement);
+        if ($actionMarkup === false) {
+            continue;
+        }
+
+        $menuItems[] = sprintf(
+            '<li class="ag-action-menu-item" tabindex="0">%s<div class="ag-action-menu-label">%s</div></li>',
+            $actionMarkup,
+            htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+        );
+    }
+
+    if (empty($menuItems)) {
+        return '';
+    }
+
+    return '<ul class="ag-action-menu list-unstyled mb-0">' . implode('', $menuItems) . '</ul>';
+};
+
 switch ($resource) {
     case 'clientes':
         if (!in_array($permission, ['moderator', 'senior', 'owner', 'admin'], true)) {
@@ -320,6 +487,7 @@ switch ($resource) {
                 );
             }
 
+            $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 3]);
 
         $data[] = [
@@ -328,6 +496,7 @@ switch ($resource) {
             'email' => $email,
             'estado' => $estadoHtml,
             'acciones' => $acciones,
+            'acciones_menu' => $accionesMenu,
             'DT_RowAttr' => $rowAttrs,
             'DT_RowClass' => $estadoSeguro === 'archivado' ? 'table-secondary ag-cliente-archivado' : '',
         ];
@@ -401,6 +570,7 @@ switch ($resource) {
                 );
             }
 
+            $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 2]);
 
             $data[] = [
@@ -408,6 +578,7 @@ switch ($resource) {
                 'nombre' => $nombre,
                 'tipo' => $tipoNombre,
                 'acciones' => $acciones,
+                'acciones_menu' => $accionesMenu,
                 'DT_RowAttr' => $rowAttrs,
             ];
         }
@@ -455,6 +626,7 @@ switch ($resource) {
                 );
             }
 
+            $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 1]);
 
             $data[] = [
@@ -462,6 +634,7 @@ switch ($resource) {
                 'identificador' => $identificador,
                 'nombre' => $nombre,
                 'acciones' => $acciones,
+                'acciones_menu' => $accionesMenu,
             ];
         }
 
@@ -508,6 +681,7 @@ switch ($resource) {
                 );
             }
 
+            $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 1]);
 
             $data[] = [
@@ -515,6 +689,7 @@ switch ($resource) {
                 'identificador' => $identificador,
                 'nombre' => $nombre,
                 'acciones' => $acciones,
+                'acciones_menu' => $accionesMenu,
             ];
         }
 
@@ -562,6 +737,7 @@ switch ($resource) {
                 ),
             ];
 
+            $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 1]);
 
             $data[] = [
@@ -570,6 +746,7 @@ switch ($resource) {
                 'nombre' => $nombre,
                 'archivo' => $archivoHtml,
                 'acciones' => $acciones,
+                'acciones_menu' => $accionesMenu,
             ];
         }
 
@@ -620,6 +797,7 @@ switch ($resource) {
                 ),
             ];
 
+            $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 1]);
 
             $data[] = [
@@ -628,6 +806,7 @@ switch ($resource) {
                 'nombre' => $nombre,
                 'archivo' => $archivoHtml,
                 'acciones' => $acciones,
+                'acciones_menu' => $accionesMenu,
             ];
         }
 
@@ -705,6 +884,7 @@ switch ($resource) {
                 );
             }
 
+            $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 1]);
 
             $data[] = [
@@ -716,6 +896,7 @@ switch ($resource) {
                 'notificaciones' => $notificacionesHtml,
                 'fecha' => $fechaHtml,
                 'acciones' => $acciones,
+                'acciones_menu' => $accionesMenu,
             ];
         }
 
@@ -809,6 +990,7 @@ switch ($resource) {
                 'desarrollo' => $escape($contrato['nombre_desarrollo'] ?? ''),
                 'estado' => sprintf('<span class="badge %1$s">%2$s</span>', $badgeEstadoClase, $estadoTexto),
                 'acciones' => $acciones,
+                'acciones_menu' => $accionesMenu,
                 'DT_RowAttr' => $rowAttrs,
             ];
         }
@@ -1056,6 +1238,7 @@ switch ($resource) {
                 }
             }
 
+            $accionesMenu = $renderActionMenu($accionesPartes);
             $acciones = $renderActionButtons($accionesPartes, ['primary' => 3]);
 
             $rowAttrs = [
@@ -1072,6 +1255,7 @@ switch ($resource) {
                 'responsable' => $escape(($solicitud['nombre_corto'] ?? '') !== '' ? $solicitud['nombre_corto'] : ($solicitud['username'] ?? '')),
                 'contrato' => $contratoHtml,
                 'acciones' => $acciones,
+                'acciones_menu' => $accionesMenu,
                 'DT_RowAttr' => $rowAttrs,
                 'DT_RowClass' => $esDevuelta ? 'solicitud-devuelta' : null,
             ];

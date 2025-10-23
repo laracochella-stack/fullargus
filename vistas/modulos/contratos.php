@@ -137,7 +137,6 @@ if ($alertasSwal) {
     echo '</script>';
 }
 require_once 'vistas/partials/content_header.php';
-require_once 'vistas/partials/ux_hint.php';
 $permisoActual = $_SESSION['permission'] ?? '';
 $accionesHeader = [];
 if (in_array($permisoActual, ['moderator', 'senior', 'owner', 'admin'], true)) {
@@ -236,13 +235,6 @@ ag_render_content_header([
               <button type="button" class="btn btn-outline-secondary" data-page="prev" aria-label="Página anterior"><i class="fas fa-chevron-left"></i></button>
               <button type="button" class="btn btn-outline-secondary" data-page="next" aria-label="Página siguiente"><i class="fas fa-chevron-right"></i></button>
             </div>
-          </div>
-          <div class="ag-table-ux-section ag-table-ux-extra">
-            <?php ag_render_gear_actions_hint([
-                'layout' => 'inline',
-                'title' => 'Botones de acción',
-                'message' => 'Selecciona un contrato y utiliza el icono de engrane para acceder a los botones disponibles.',
-            ]); ?>
           </div>
         </div>
         <div class="ag-bulk-actions" id="accionesContrato" style="display:none;">
