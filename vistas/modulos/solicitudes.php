@@ -155,6 +155,7 @@ $estadoColores = [
 ?>
 <?php
 require_once 'vistas/partials/content_header.php';
+require_once 'vistas/partials/ux_hint.php';
 $accionesHeader = [
     [
         'label' => 'Nueva solicitud',
@@ -273,7 +274,13 @@ ag_render_content_header([
           <button type="button" class="btn btn-outline-secondary" data-page="next" aria-label="Página siguiente"><i class="fas fa-chevron-right"></i></button>
         </div>
       </div>
-      <div class="ag-table-ux-section ag-table-ux-extra"></div>
+      <div class="ag-table-ux-section ag-table-ux-extra">
+        <?php ag_render_gear_actions_hint([
+            'layout' => 'inline',
+            'title' => 'Botones de acción',
+            'message' => 'Selecciona una solicitud y usa el icono de engrane para abrir los botones de acción.',
+        ]); ?>
+      </div>
     </div>
     <?php
     $solicitudSeleccionadaCancelada = false;

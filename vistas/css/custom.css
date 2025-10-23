@@ -1473,3 +1473,46 @@ table.dataTable thead th.no-sort::before {
     background-color: #d39e00 !important;
     color: #212529 !important;
 }
+.ag-ux-hint {
+  border-radius: 0.5rem;
+}
+
+.ag-ux-hint .ag-ux-hint-badge {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+}
+
+.ag-ux-hint .ag-ux-hint-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0d6efd;
+  margin-right: 0.5rem;
+}
+
+.ag-ux-hint .ag-ux-hint-title {
+  font-weight: 600;
+}
+
+.ag-ux-hint-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(13, 110, 253, 0.25);
+  background-color: rgba(13, 110, 253, 0.08);
+  font-size: 0.875rem;
+  color: #0b325c;
+}
+
+.ag-ux-hint-inline .ag-ux-hint-badge {
+  background-color: #0d6efd;
+}
+
+.ag-ux-hint-inline .ag-ux-hint-text {
+  flex: 1;
+}
+
+.ag-ux-hint-inline .ag-ux-hint-title {
+  font-size: 0.9rem;
+}
