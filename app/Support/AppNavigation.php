@@ -96,6 +96,15 @@ final class AppNavigation
                         'fragment' => 'parametros-plantillas-solicitud',
                     ],
                 ],
+                'config_menu' => [
+                    [
+                        'label' => 'Plantillas de solicitud',
+                        'route' => 'solicitudesConfiguracion',
+                        'icon' => 'fas fa-file-word',
+                        'visible' => $canParametros,
+                        'fragment' => 'parametros-plantillas-solicitud',
+                    ],
+                ],
                 'nav_peers' => [
                     self::APP_SOLICITUDES,
                     self::APP_CLIENTES,
@@ -141,6 +150,22 @@ final class AppNavigation
                         'fragment' => 'parametros-plantillas-contrato',
                     ],
                 ],
+                'config_menu' => [
+                    [
+                        'label' => 'Tipos de contrato',
+                        'route' => 'contratosConfiguracion',
+                        'icon' => 'fas fa-list-check',
+                        'visible' => $canParametros,
+                        'fragment' => 'parametros-tipos-contrato',
+                    ],
+                    [
+                        'label' => 'Plantillas de contrato',
+                        'route' => 'contratosConfiguracion',
+                        'icon' => 'far fa-copy',
+                        'visible' => $canParametros,
+                        'fragment' => 'parametros-plantillas-contrato',
+                    ],
+                ],
                 'nav_peers' => [
                     self::APP_CONTRATOS,
                     self::APP_CLIENTES,
@@ -167,6 +192,15 @@ final class AppNavigation
                     ],
                     [
                         'label' => 'Configurar nacionalidades',
+                        'route' => 'clientesConfiguracion',
+                        'icon' => 'fas fa-flag',
+                        'visible' => $canParametros,
+                        'fragment' => 'parametros-nacionalidades',
+                    ],
+                ],
+                'config_menu' => [
+                    [
+                        'label' => 'Nacionalidades',
                         'route' => 'clientesConfiguracion',
                         'icon' => 'fas fa-flag',
                         'visible' => $canParametros,
@@ -282,7 +316,7 @@ final class AppNavigation
             }
             $module['children'] = [];
             foreach ($children as $child) {
-                if (empty($child['visible'])) {
+                if (isset($child['visible']) && !$child['visible']) {
                     continue;
                 }
 
@@ -315,10 +349,94 @@ final class AppNavigation
 
                 $module['children'][] = $normalized;
             }
+
+            $configMenu = $module['config_menu'] ?? [];
+            if (!is_array($configMenu)) {
+                $configMenu = [];
+            }
+
+            $normalizedConfig = [];
+            foreach ($configMenu as $entry) {
+                if (isset($entry['visible']) && !$entry['visible']) {
+                    continue;
+                }
+
+                $label = isset($entry['label']) ? trim((string)$entry['label']) : '';
+                if ($label === '') {
+                    continue;
+                }
+
+                $normalizedEntry = [
+                    'label' => $label,
+                    'route' => isset($entry['route']) && $entry['route'] !== ''
+                        ? (string)$entry['route']
+                        : null,
+                    'icon' => (string)($entry['icon'] ?? ''),
+                ];
+
+                if (isset($entry['url']) && is_string($entry['url']) && trim($entry['url']) !== '') {
+                    $normalizedEntry['url'] = trim($entry['url']);
+                }
+
+                if (isset($entry['fragment']) && trim((string)$entry['fragment']) !== '') {
+                    $normalizedEntry['fragment'] = trim((string)$entry['fragment']);
+                }
+
+                if (isset($entry['target']) && trim((string)$entry['target']) !== '') {
+                    $normalizedEntry['target'] = trim((string)$entry['target']);
+                }
+
+                $normalizedConfig[] = $normalizedEntry;
+            }
+
+            $module['config_menu'] = $normalizedConfig;
         }
         unset($module);
 
         return $modules;
+    }
+
+    /**
+     * Returns configuration shortcuts for a module to be rendered as contextual actions.
+     *
+     * @param string $moduleKey   Identifier of the module to fetch.
+     * @param array<string,mixed> $session Session data for permission checks.
+     * @param string|null $currentRoute Optional current route to mark as active.
+     *
+     * @return array<int, array<string, mixed>> Normalized configuration entries.
+     */
+    public static function getModuleConfigurationMenu(string $moduleKey, array $session = [], ?string $currentRoute = null): array
+    {
+        $modules = self::getModules($session);
+        if (!isset($modules[$moduleKey])) {
+            return [];
+        }
+
+        $configMenu = $modules[$moduleKey]['config_menu'] ?? [];
+        if (!is_array($configMenu) || $configMenu === []) {
+            return [];
+        }
+
+        $items = [];
+        foreach ($configMenu as $entry) {
+            $route = $entry['route'] ?? null;
+            $url = $entry['url'] ?? self::buildUrl($route);
+
+            $fragment = isset($entry['fragment']) ? trim((string)$entry['fragment']) : '';
+            if ($fragment !== '') {
+                $url .= '#' . rawurlencode($fragment);
+            }
+
+            $items[] = [
+                'label' => $entry['label'],
+                'url' => $url,
+                'icon' => $entry['icon'] ?? '',
+                'active' => $currentRoute !== null && $route !== null && $route === $currentRoute,
+                'target' => $entry['target'] ?? null,
+            ];
+        }
+
+        return $items;
     }
 
     /**
