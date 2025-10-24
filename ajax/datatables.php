@@ -373,6 +373,63 @@ switch ($resource) {
         }
 
         $data = [];
+        $buildActionControl = static function (array $definition) use ($buildAttrString) {
+            $tag = strtolower((string)($definition['tag'] ?? 'button'));
+            if (!in_array($tag, ['a', 'button'], true)) {
+                $tag = 'button';
+            }
+
+            $attributes = [];
+            foreach (($definition['attributes'] ?? []) as $name => $value) {
+                if ($value === null || $value === '') {
+                    continue;
+                }
+                $attributes[$name] = (string)$value;
+            }
+
+            if ($tag === 'button' && !isset($attributes['type'])) {
+                $attributes['type'] = 'button';
+            }
+
+            $classList = trim((string)($definition['class'] ?? ''));
+            if ($classList !== '') {
+                $attributes['class'] = isset($attributes['class'])
+                    ? trim($attributes['class'] . ' ' . $classList)
+                    : $classList;
+            }
+
+            $icon = trim((string)($definition['icon'] ?? ''));
+            $label = trim((string)($definition['label'] ?? ''));
+            $showLabel = (bool)($definition['show_label'] ?? false);
+
+            $contentParts = [];
+            if ($icon !== '') {
+                $contentParts[] = sprintf(
+                    '<i class="%s"></i>',
+                    htmlspecialchars($icon, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                );
+            }
+            if ($label !== '') {
+                if ($showLabel) {
+                    $contentParts[] = sprintf(
+                        '<span class="ms-1">%s</span>',
+                        htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                    );
+                } else {
+                    $contentParts[] = sprintf(
+                        '<span class="visually-hidden">%s</span>',
+                        htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                    );
+                }
+            }
+
+            if (empty($contentParts) && $label !== '') {
+                $contentParts[] = htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            }
+
+            return sprintf('<%1$s%2$s>%3$s</%1$s>', $tag, $buildAttrString($attributes), implode('', $contentParts));
+        };
+
         foreach ($clientes as $cliente) {
             $id = (int)($cliente['id'] ?? 0);
             $nombre = $escape($cliente['nombre'] ?? '');
@@ -446,48 +503,122 @@ switch ($resource) {
             'data-view-modal' => '#modalVerCliente',
         ];
 
-        $attrString = $buildAttrString($rowAttrs);
+        $rowDataAttrs = [];
+        foreach ($rowAttrs as $attrName => $attrValue) {
+            if (strpos($attrName, 'data-') === 0) {
+                $rowDataAttrs[$attrName] = $attrValue;
+            }
+        }
 
+            $nombreLinkAttrs = array_merge(
+                $rowDataAttrs,
+                [
+                    'href' => '#',
+                    'class' => 'verClienteNombre',
+                    'data-bs-toggle' => 'modal',
+                    'data-bs-target' => '#modalVerCliente',
+                    'title' => $escape('Ver cliente'),
+                ]
+            );
             $nombreLink = sprintf(
-                '<a href="#" class="verClienteNombre" data-bs-toggle="modal" data-bs-target="#modalVerCliente"%s>%s</a>',
-                $attrString,
-                $nombre
+                '<a%s>%s</a>',
+                $buildAttrString($nombreLinkAttrs),
+                $nombre !== '' ? $nombre : '—'
             );
 
             $accionesBotones = [];
-            $accionesBotones[] = sprintf(
-                '<button type="button" class="btn btn-warning btn-sm btnVerCliente" data-bs-toggle="modal" data-bs-target="#modalVerCliente"%s>'
-                . '<i class="fas fa-eye"></i>'
-                . '</button>',
-                $attrString
-            );
-            $accionesBotones[] = sprintf(
-                '<button type="button" class="btn btn-primary btn-sm btnEditarCliente" data-bs-toggle="modal" data-bs-target="#modalEditarCliente"%s>'
-                . '<i class="fas fa-pencil-alt"></i>'
-                . '</button>',
-                $attrString
-            );
-            $accionesBotones[] = sprintf(
-                '<a href="index.php?ruta=crearContrato&amp;cliente_id=%d" class="btn btn-success btn-sm">Crear contrato</a>',
-                $id
-            );
-            $accionesBotones[] = sprintf(
-                '<a href="index.php?ruta=contratos&amp;cliente_id=%d" class="btn btn-info btn-sm">Ver contratos</a>',
-                $id
-            );
+
+            $accionesBotones[] = $buildActionControl([
+                'tag' => 'button',
+                'class' => 'btn btn-warning btn-sm btnVerCliente',
+                'icon' => 'fas fa-eye',
+                'label' => 'Ver cliente',
+                'attributes' => array_merge(
+                    $rowDataAttrs,
+                    [
+                        'data-bs-toggle' => 'modal',
+                        'data-bs-target' => '#modalVerCliente',
+                        'title' => $escape('Ver cliente'),
+                        'aria-label' => $escape('Ver cliente'),
+                        'type' => 'button',
+                    ]
+                ),
+            ]);
+
+            $accionesBotones[] = $buildActionControl([
+                'tag' => 'button',
+                'class' => 'btn btn-primary btn-sm btnEditarCliente',
+                'icon' => 'fas fa-pencil-alt',
+                'label' => 'Editar cliente',
+                'attributes' => array_merge(
+                    $rowDataAttrs,
+                    [
+                        'data-bs-toggle' => 'modal',
+                        'data-bs-target' => '#modalEditarCliente',
+                        'title' => $escape('Editar cliente'),
+                        'aria-label' => $escape('Editar cliente'),
+                        'type' => 'button',
+                    ]
+                ),
+            ]);
+
+            $accionesBotones[] = $buildActionControl([
+                'tag' => 'a',
+                'class' => 'btn btn-success btn-sm btnCrearContrato',
+                'icon' => 'fas fa-file-signature',
+                'label' => 'Crear contrato',
+                'show_label' => true,
+                'attributes' => array_merge(
+                    $rowDataAttrs,
+                    [
+                        'href' => $escape(sprintf('index.php?ruta=crearContrato&cliente_id=%d', $id)),
+                        'title' => $escape('Crear contrato'),
+                        'aria-label' => $escape('Crear contrato'),
+                    ]
+                ),
+            ]);
+
+            $accionesBotones[] = $buildActionControl([
+                'tag' => 'a',
+                'class' => 'btn btn-info btn-sm',
+                'icon' => 'fas fa-folder-open',
+                'label' => 'Ver contratos',
+                'show_label' => true,
+                'attributes' => array_merge(
+                    $rowDataAttrs,
+                    [
+                        'href' => $escape(sprintf('index.php?ruta=contratos&cliente_id=%d', $id)),
+                        'title' => $escape('Ver contratos'),
+                        'aria-label' => $escape('Ver contratos'),
+                    ]
+                ),
+            ]);
 
             if (in_array($permission, ['moderator', 'senior', 'owner', 'admin'], true)) {
-                $accionesBotones[] = sprintf(
-                    '<button type="button" class="btn btn-sm %s btnCambiarEstadoCliente" data-id="%d" data-nombre="%s" data-estado-actual="%s" data-estado-destino="%s">'
-                    . '<i class="fas %s"></i>'
-                    . '</button>',
-                    $estadoSeguro === 'archivado' ? 'btn-outline-success' : 'btn-outline-secondary',
-                    $id,
-                    $nombre,
-                    $estadoSeguro,
-                    $estadoSeguro === 'archivado' ? 'activo' : 'archivado',
-                    $estadoSeguro === 'archivado' ? 'fa-rotate-left' : 'fa-box-archive'
-                );
+                $estadoDestino = $estadoSeguro === 'archivado' ? 'activo' : 'archivado';
+                $accionEstadoLabel = $estadoSeguro === 'archivado' ? 'Reactivar cliente' : 'Archivar cliente';
+                $accionEstadoIcono = $estadoSeguro === 'archivado' ? 'fas fa-rotate-left' : 'fas fa-box-archive';
+                $accionEstadoClase = $estadoSeguro === 'archivado'
+                    ? 'btn btn-sm btn-outline-success btnCambiarEstadoCliente'
+                    : 'btn btn-sm btn-outline-secondary btnCambiarEstadoCliente';
+
+                $accionesBotones[] = $buildActionControl([
+                    'tag' => 'button',
+                    'class' => $accionEstadoClase,
+                    'icon' => $accionEstadoIcono,
+                    'label' => $accionEstadoLabel,
+                    'attributes' => array_merge(
+                        $rowDataAttrs,
+                        [
+                            'data-id' => (string)$id,
+                            'data-estado-actual' => $estadoSeguro,
+                            'data-estado-destino' => $estadoDestino,
+                            'title' => $escape($accionEstadoLabel),
+                            'aria-label' => $escape($accionEstadoLabel),
+                            'type' => 'button',
+                        ]
+                    ),
+                ]);
             }
 
             $accionesMenu = $renderActionMenu($accionesBotones);
@@ -999,7 +1130,7 @@ switch ($resource) {
                 'data-contrato-id' => (string)$id,
                 'data-estatus' => (string)$estatusValor,
                 'data-contrato' => $jsonContrato !== false ? $jsonContrato : '{}',
-                'data-view-url' => $escape(sprintf('index.php?ruta=crearContrato&contrato_id=%d', $id)),
+                'data-view-url' => sprintf('index.php?ruta=crearContrato&contrato_id=%d', $id),
             ];
 
             $data[] = [
@@ -1232,7 +1363,7 @@ switch ($resource) {
                 'data-estado' => $escape($estado),
                 'data-contrato-id' => (string)$contratoId,
                 'data-has-contrato' => $tieneContrato ? '1' : '0',
-                'data-view-url' => $escape($urlVerSolicitud),
+                'data-view-url' => $urlVerSolicitud,
             ];
 
             $checkboxId = sprintf('agSeleccionSolicitud%d', $solicitudId);
