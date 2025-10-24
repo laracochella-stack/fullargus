@@ -55,6 +55,4 @@ ag_render_content_header([
       </div>
     </div>
   </div>
-  <?php include __DIR__ . '/../partials/parametros/modal_editar_variable.php'; ?>
-  <?php include __DIR__ . '/../partials/parametros/modal_editar_plantilla.php'; ?>
 </section>

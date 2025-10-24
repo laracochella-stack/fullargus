@@ -1973,3 +1973,45 @@ body.ag-app-drawer-open {
 .ag-app-card-wrapper--hidden {
   display: none !important;
 }
+
+.ag-editable-row-new {
+  background-color: rgba(40, 167, 69, 0.08);
+}
+
+.ag-editable-row-dirty:not(.ag-editable-row-new) {
+  background-color: rgba(23, 162, 184, 0.08);
+}
+
+.ag-editable-cell-invalid {
+  box-shadow: inset 0 0 0 1px rgba(220, 53, 69, 0.6);
+}
+
+.ag-editable-cell-editing {
+  position: relative;
+  padding: 0.25rem !important;
+}
+
+.ag-editable-cell-editing .ag-editable-input,
+.ag-editable-cell-editing .ag-editable-select {
+  width: 100%;
+}
+
+.ag-editable-input,
+.ag-editable-select {
+  min-height: 2rem;
+  font-size: 0.85rem;
+}
+
+.ag-editable-file-selected {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.ag-editable-file-selected::before {
+  content: '\f15b';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  color: #17a2b8;
+}
