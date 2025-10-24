@@ -217,6 +217,28 @@ final class AppNavigation
                 'visible' => $canParametros || $canUsuarios || $canConsola,
                 'children' => [
                     [
+                        'label' => 'Clientes · Nacionalidades',
+                        'route' => 'clientesConfiguracion',
+                        'icon' => 'fas fa-flag',
+                        'visible' => $canParametros,
+                    ],
+                    [
+                        'label' => 'Contratos · Tipos y plantillas',
+                        'route' => 'contratosConfiguracion',
+                        'icon' => 'fas fa-file-signature',
+                        'visible' => $canParametros,
+                    ],
+                    [
+                        'label' => 'Solicitudes · Plantillas',
+                        'route' => 'solicitudesConfiguracion',
+                        'icon' => 'fas fa-inbox',
+                        'visible' => $canParametros,
+                    ],
+                    [
+                        'type' => 'divider',
+                        'visible' => $canParametros && ($canUsuarios || $canConsola),
+                    ],
+                    [
                         'label' => 'Parámetros del sistema',
                         'route' => 'parametros',
                         'icon' => 'fas fa-sliders-h',
@@ -263,11 +285,35 @@ final class AppNavigation
                 if (empty($child['visible'])) {
                     continue;
                 }
-                $module['children'][] = [
+
+                $type = isset($child['type']) ? strtolower((string)$child['type']) : 'link';
+                if ($type === 'divider') {
+                    $module['children'][] = ['type' => 'divider'];
+                    continue;
+                }
+
+                $normalized = [
+                    'type' => $type,
                     'label' => (string)($child['label'] ?? ''),
-                    'route' => $child['route'] ?? null,
+                    'route' => isset($child['route']) && $child['route'] !== ''
+                        ? (string)$child['route']
+                        : null,
                     'icon' => (string)($child['icon'] ?? ''),
                 ];
+
+                if (isset($child['url']) && is_string($child['url']) && trim($child['url']) !== '') {
+                    $normalized['url'] = trim((string)$child['url']);
+                }
+
+                if (isset($child['fragment']) && trim((string)$child['fragment']) !== '') {
+                    $normalized['fragment'] = trim((string)$child['fragment']);
+                }
+
+                if (isset($child['target']) && trim((string)$child['target']) !== '') {
+                    $normalized['target'] = trim((string)$child['target']);
+                }
+
+                $module['children'][] = $normalized;
             }
         }
         unset($module);
@@ -318,17 +364,26 @@ final class AppNavigation
             $url = self::buildUrl($route);
             $children = [];
             foreach ($module['children'] as $child) {
+                $type = $child['type'] ?? 'link';
+                if ($type === 'divider') {
+                    $children[] = ['type' => 'divider'];
+                    continue;
+                }
+
                 $childRoute = $child['route'] ?? null;
-                $childUrl = self::buildUrl($childRoute);
+                $childUrl = isset($child['url']) ? (string)$child['url'] : self::buildUrl($childRoute);
                 $fragment = isset($child['fragment']) ? trim((string)$child['fragment']) : '';
                 if ($fragment !== '') {
                     $childUrl .= '#' . rawurlencode($fragment);
                 }
+
                 $children[] = [
+                    'type' => 'link',
                     'label' => $child['label'],
                     'url' => $childUrl,
                     'icon' => $child['icon'] ?? '',
-                    'active' => $currentRoute !== null && $childRoute === $currentRoute,
+                    'active' => $currentRoute !== null && $childRoute !== null && $childRoute === $currentRoute,
+                    'target' => $child['target'] ?? null,
                 ];
             }
 

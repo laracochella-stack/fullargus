@@ -105,16 +105,28 @@ if (!function_exists('ag_render_content_header')) {
                 if ($hasChildren) {
                     echo '<ul class="dropdown-menu">';
                     foreach ($item['children'] as $child) {
+                        $childType = isset($child['type']) ? strtolower((string)$child['type']) : 'link';
+                        if ($childType === 'divider') {
+                            echo '<li><hr class="dropdown-divider"></li>';
+                            continue;
+                        }
+
                         $childLabel = htmlspecialchars((string)($child['label'] ?? ''), ENT_QUOTES);
                         if ($childLabel === '') {
                             continue;
                         }
+
                         $childUrl = htmlspecialchars((string)($child['url'] ?? '#'), ENT_QUOTES);
                         $childIcon = trim((string)($child['icon'] ?? ''));
                         $childIconHtml = $childIcon !== '' ? '<i class="' . htmlspecialchars($childIcon, ENT_QUOTES) . ' me-2"></i>' : '';
                         $childActive = !empty($child['active']);
                         $childClass = 'dropdown-item' . ($childActive ? ' active' : '');
-                        echo '<li><a class="' . htmlspecialchars($childClass, ENT_QUOTES) . '" href="' . $childUrl . '">' . $childIconHtml . $childLabel . '</a></li>';
+                        $targetAttr = '';
+                        if (!empty($child['target'])) {
+                            $target = htmlspecialchars((string)$child['target'], ENT_QUOTES);
+                            $targetAttr = ' target="' . $target . '"';
+                        }
+                        echo '<li><a class="' . htmlspecialchars($childClass, ENT_QUOTES) . '" href="' . $childUrl . '"' . $targetAttr . '>' . $childIconHtml . $childLabel . '</a></li>';
                     }
                     echo '</ul>';
                 }
