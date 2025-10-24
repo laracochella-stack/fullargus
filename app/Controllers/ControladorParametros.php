@@ -33,7 +33,7 @@ class ControladorParametros
             return null;
         }
 
-        if (str_starts_with($ruta, '/') || preg_match('/^[A-Za-z]:[\\\/]/', $ruta)) {
+        if (str_starts_with($ruta, '/') || preg_match('#^[A-Za-z]:[\\/]#', $ruta)) {
             return $ruta;
         }
 

@@ -39,14 +39,8 @@ ag_render_content_header([
 ?>
 <section class="content">
   <div class="container-fluid">
-    <div class="card shadow-sm border-0">
-      <div class="card-body">
-        <p class="text-muted mb-4">
-          Las nacionalidades registradas se utilizan en formularios de clientes, solicitudes y contratos. Cualquier cambio se
-          aplica de inmediato para todo el equipo.
-        </p>
-        <?php include __DIR__ . '/../partials/parametros/nacionalidades.php'; ?>
-      </div>
+    <div class="ag-parameters-layout">
+      <?php include __DIR__ . '/../partials/parametros/nacionalidades.php'; ?>
     </div>
   </div>
 </section>

@@ -39,14 +39,8 @@ ag_render_content_header([
 ?>
 <section class="content">
   <div class="container-fluid">
-    <div class="card shadow-sm border-0">
-      <div class="card-body">
-        <p class="text-muted mb-4">
-          Mantén actualizados los formatos institucionales que se generan para cada tipo de solicitud. Las plantillas deben estar
-          en formato DOCX y respetar las variables disponibles en el módulo.
-        </p>
-        <?php include __DIR__ . '/../partials/parametros/plantillas_solicitud.php'; ?>
-      </div>
+    <div class="ag-parameters-layout">
+      <?php include __DIR__ . '/../partials/parametros/plantillas_solicitud.php'; ?>
     </div>
   </div>
 </section>
