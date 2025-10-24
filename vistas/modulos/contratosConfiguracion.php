@@ -43,16 +43,9 @@ ag_render_content_header([
 ?>
 <section class="content">
   <div class="container-fluid">
-    <div class="card shadow-sm border-0">
-      <div class="card-body">
-        <p class="text-muted mb-4">
-          Define los tipos de contrato disponibles y carga las plantillas DOCX que se utilizarán como base para los documentos
-          generados desde el sistema.
-        </p>
-        <?php include __DIR__ . '/../partials/parametros/tipos_contrato.php'; ?>
-        <hr class="my-5">
-        <?php include __DIR__ . '/../partials/parametros/plantillas_contrato.php'; ?>
-      </div>
+    <div class="ag-parameters-layout">
+      <?php include __DIR__ . '/../partials/parametros/tipos_contrato.php'; ?>
+      <?php include __DIR__ . '/../partials/parametros/plantillas_contrato.php'; ?>
     </div>
   </div>
 </section>

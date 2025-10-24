@@ -5000,6 +5000,56 @@ document.addEventListener('DOMContentLoaded', () => {
         return Swal.fire(opcionesSwal).then(ejecutarRecarga);
     };
 
+    const recargarTablaEditable = (tabla, resetPaging = false) => {
+        const manager = getDataTableManager();
+        const elemento = tabla instanceof Element ? tabla : document.querySelector(tabla);
+        if (!elemento) {
+            return;
+        }
+
+        if (manager && typeof manager.reload === 'function') {
+            manager.reload(elemento, {}, resetPaging);
+            return;
+        }
+
+        const state = elemento.__agDtState;
+        if (state && state.instance && state.instance.ajax && typeof state.instance.ajax.reload === 'function') {
+            state.instance.ajax.reload(null, resetPaging);
+            return;
+        }
+
+        if (typeof $ !== 'undefined' && $.fn && typeof $.fn.dataTable === 'function') {
+            const instance = $.fn.dataTable.isDataTable(elemento) ? $(elemento).DataTable() : null;
+            if (instance && instance.ajax && typeof instance.ajax.reload === 'function') {
+                instance.ajax.reload(null, resetPaging);
+            }
+        }
+    };
+
+    const refrescarTablasParametros = (detalle = {}) => {
+        const tablas = [];
+        if (detalle && detalle.table) {
+            tablas.push(detalle.table);
+        } else {
+            document.querySelectorAll('.ag-data-table[data-editable="1"]').forEach((table) => {
+                tablas.push(table);
+            });
+        }
+
+        tablas.forEach((tabla) => {
+            recargarTablaEditable(tabla, false);
+        });
+    };
+
+    if (typeof window !== 'undefined') {
+        window.agRefreshParametrosTables = refrescarTablasParametros;
+    }
+
+    document.addEventListener('ag:parametros:reload', (event) => {
+        const detalle = event && event.detail ? event.detail : {};
+        refrescarTablasParametros(detalle);
+    });
+
     const mostrarErrorConexionParametros = () => mostrarAlertaParametros({
         icon: 'error',
         title: 'Error de conexión',
@@ -5930,12 +5980,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     reload: false,
                 });
 
-                const manager = getDataTableManager();
-                if (manager && typeof manager.reload === 'function') {
-                    manager.reload(state.table, {}, false);
-                } else if (state.instance && state.instance.ajax && typeof state.instance.ajax.reload === 'function') {
-                    state.instance.ajax.reload(null, false);
-                }
+                document.dispatchEvent(new CustomEvent('ag:parametros:reload', { detail: { table: state.table } }));
             } catch (error) {
                 console.error('Error al guardar parámetros', error);
                 state.saving = false;
