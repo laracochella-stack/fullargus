@@ -3149,6 +3149,41 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const obtenerCsrfToken = () => {
+        const sanitize = (value) => {
+            if (typeof value !== 'string') {
+                return '';
+            }
+            return value.trim();
+        };
+
+        if (typeof window !== 'undefined') {
+            const globalToken = sanitize(window.__AG_CSRF_TOKEN || '');
+            if (globalToken !== '') {
+                return globalToken;
+            }
+        }
+
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta && typeof meta.content === 'string') {
+            const metaToken = sanitize(meta.content);
+            if (metaToken !== '') {
+                if (typeof window !== 'undefined') {
+                    window.__AG_CSRF_TOKEN = metaToken;
+                }
+                return metaToken;
+            }
+        }
+
+        const bodyToken = document.body && document.body.dataset
+            ? sanitize(document.body.dataset.csrfToken || '')
+            : '';
+        if (bodyToken !== '') {
+            if (typeof window !== 'undefined') {
+                window.__AG_CSRF_TOKEN = bodyToken;
+            }
+            return bodyToken;
+        }
+
         const selectores = [
             '#formEditarCliente input[name="csrf_token"]',
             '#formCliente input[name="csrf_token"]',
@@ -3157,8 +3192,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (const selector of selectores) {
             const input = document.querySelector(selector);
-            if (input && typeof input.value === 'string' && input.value.trim() !== '') {
-                return input.value.trim();
+            if (input && typeof input.value === 'string') {
+                const token = sanitize(input.value);
+                if (token !== '') {
+                    if (typeof window !== 'undefined') {
+                        window.__AG_CSRF_TOKEN = token;
+                    }
+                    return token;
+                }
             }
         }
 
@@ -5379,17 +5420,32 @@ document.addEventListener('DOMContentLoaded', () => {
             input.focus();
             input.select();
 
+            let finalized = false;
+
+            const cleanup = () => {
+                input.removeEventListener('keydown', handleKeyDown);
+                input.removeEventListener('blur', handleBlur);
+            };
+
             const finalize = (commit) => {
+                if (finalized) {
+                    return;
+                }
+                finalized = true;
+                cleanup();
                 cellNode.classList.remove('ag-editable-cell-editing');
                 if (!commit) {
                     cellNode.innerHTML = originalHtml;
                     return;
                 }
                 const nuevo = input.value || '';
+                if (input.parentNode === cellNode) {
+                    cellNode.removeChild(input);
+                }
                 setRowValue(state, rowState, meta, nuevo);
             };
 
-            input.addEventListener('keydown', (event) => {
+            const handleKeyDown = (event) => {
                 if (event.key === 'Enter') {
                     event.preventDefault();
                     finalize(true);
@@ -5397,11 +5453,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     event.preventDefault();
                     finalize(false);
                 }
-            });
+            };
 
-            input.addEventListener('blur', () => {
+            const handleBlur = () => {
                 finalize(true);
-            });
+            };
+
+            input.addEventListener('keydown', handleKeyDown);
+            input.addEventListener('blur', handleBlur);
         };
 
         const startSelectEdit = (state, cellNode, meta, rowState) => {
@@ -5424,37 +5483,53 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentValue = rowState.values[meta.field] ?? '';
             select.value = currentValue;
 
-            const commit = () => {
-                const value = select.value;
-                const label = getSelectLabel(meta, value);
-                setRowValue(state, rowState, meta, value, escapeHtml(label));
-            };
-
-            select.addEventListener('change', () => {
-                commit();
-            });
-            select.addEventListener('blur', () => {
-                commit();
-            });
-
             cellNode.classList.add('ag-editable-cell-editing');
             const originalHtml = cellNode.innerHTML;
             cellNode.innerHTML = '';
             cellNode.appendChild(select);
             select.focus();
 
+            let finalized = false;
+
+            const cleanup = () => {
+                select.removeEventListener('change', handleChange);
+                select.removeEventListener('blur', handleBlur);
+                select.removeEventListener('keydown', handleKey);
+                if (select.parentNode === cellNode) {
+                    cellNode.removeChild(select);
+                }
+                cellNode.classList.remove('ag-editable-cell-editing');
+            };
+
+            const finalize = (commit) => {
+                if (finalized) {
+                    return;
+                }
+                finalized = true;
+                const value = select.value;
+                cleanup();
+                if (!commit) {
+                    cellNode.innerHTML = originalHtml;
+                    return;
+                }
+                const label = getSelectLabel(meta, value);
+                setRowValue(state, rowState, meta, value, escapeHtml(label));
+            };
+
+            const handleChange = () => finalize(true);
+            const handleBlur = () => finalize(true);
             const handleKey = (event) => {
                 if (event.key === 'Escape') {
                     event.preventDefault();
-                    cellNode.classList.remove('ag-editable-cell-editing');
-                    cellNode.innerHTML = originalHtml;
+                    finalize(false);
                 } else if (event.key === 'Enter') {
                     event.preventDefault();
-                    cellNode.classList.remove('ag-editable-cell-editing');
-                    commit();
+                    finalize(true);
                 }
             };
 
+            select.addEventListener('change', handleChange);
+            select.addEventListener('blur', handleBlur);
             select.addEventListener('keydown', handleKey);
         };
 

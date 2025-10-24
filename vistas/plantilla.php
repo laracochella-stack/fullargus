@@ -31,6 +31,9 @@ if (empty($_SESSION['csrf_token'])) {
     // bin2hex(random_bytes()) genera una cadena segura para usar como token
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
+$csrfTokenRaw = $_SESSION['csrf_token'] ?? '';
+$csrfTokenAttr = htmlspecialchars($csrfTokenRaw, ENT_QUOTES, 'UTF-8');
+$csrfTokenJs = json_encode($csrfTokenRaw, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
 
 // === Interceptor para peticiones AJAX del flujo crearContrato ===
 if (
@@ -101,6 +104,7 @@ if (
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="<?php echo $csrfTokenAttr; ?>">
     <link rel="shortcut icon" href="vistas/argus_ico.ico" type="image/x-icon">
     <!-- Cambiar título global -->
     <title data-base-title="Contratos Grupo Argus">Contratos Grupo Argus</title>
@@ -142,7 +146,7 @@ if ($sesionActiva) {
     }
 }
 ?>
-<body class="<?php echo htmlspecialchars($bodyClasses, ENT_QUOTES, 'UTF-8'); ?>">
+<body class="<?php echo htmlspecialchars($bodyClasses, ENT_QUOTES, 'UTF-8'); ?>" data-csrf-token="<?php echo $csrfTokenAttr; ?>">
 <?php
 if ($sesionActiva) {
     echo '<div class="wrapper">';
@@ -210,6 +214,7 @@ if ($sesionActiva) {
 <!-- Summernote JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs5.min.js"></script>
 <script>
+    window.__AG_CSRF_TOKEN = <?php echo $csrfTokenJs; ?>;
     window.AG_NOTIFICATIONS = {
         habilitadas: <?php
             $notificacionesActivas = !empty($_SESSION['notificaciones_activas']);

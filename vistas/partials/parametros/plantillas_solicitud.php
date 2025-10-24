@@ -30,6 +30,17 @@ $solicitudOptionsJson = htmlspecialchars(json_encode($solicitudOptions, JSON_UNE
       <p class="text-muted small mb-3">
         Selecciona el tipo de plantilla con doble clic o carga un nuevo archivo cuando sea necesario. Guarda siempre los cambios para aplicar las modificaciones.
       </p>
+      <div class="alert alert-info small d-flex align-items-start gap-2" role="alert">
+        <i class="fas fa-circle-info mt-1" aria-hidden="true"></i>
+        <div>
+          <strong>Pasos para registrar una plantilla:</strong>
+          <ol class="mb-0 ps-3">
+            <li>Doble clic sobre la columna <em>Tipo</em> y elige el formato de solicitud que necesitas.</li>
+            <li>Doble clic en la columna <em>Archivo</em> para subir el DOCX institucional correspondiente.</li>
+            <li>Cuando la fila quede resaltada, utiliza el botón <i class="fas fa-cloud-upload-alt"></i> <span class="visually-hidden">Guardar cambios</span> para confirmar el registro.</li>
+          </ol>
+        </div>
+      </div>
       <div class="table-responsive">
         <table
           class="table table-hover table-striped table-sm align-middle mb-0 ag-data-table"

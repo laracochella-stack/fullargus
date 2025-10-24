@@ -33,6 +33,17 @@ $tipoOptionsJson = htmlspecialchars(json_encode($tipoOptions, JSON_UNESCAPED_UNI
       <p class="text-muted small mb-3">
         Utiliza doble clic para seleccionar el tipo de contrato o reemplazar el archivo. Los registros modificados se resaltarán hasta que guardes los cambios.
       </p>
+      <div class="alert alert-info small d-flex align-items-start gap-2" role="alert">
+        <i class="fas fa-circle-info mt-1" aria-hidden="true"></i>
+        <div>
+          <strong>¿Cómo actualizar una plantilla?</strong>
+          <ol class="mb-0 ps-3">
+            <li>Doble clic en la columna <em>Tipo</em> para elegir el contrato correspondiente.</li>
+            <li>Doble clic en la columna <em>Archivo</em> para cargar el documento oficial en formato DOCX o PDF.</li>
+            <li>Cuando las filas aparezcan resaltadas, presiona el botón <i class="fas fa-cloud-upload-alt"></i> <span class="visually-hidden">Guardar cambios</span> para aplicar los cambios.</li>
+          </ol>
+        </div>
+      </div>
       <div class="table-responsive">
         <table
           class="table table-hover table-striped table-sm align-middle mb-0 ag-data-table"
