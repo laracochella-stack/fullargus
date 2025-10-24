@@ -12,6 +12,15 @@ $notificacionesActivas = !empty($_SESSION['notificaciones_activas']);
 <nav class="main-header navbar navbar-expand-lg navbar-white navbar-light ag-top-navbar">
   <div class="container-fluid">
     <div class="ag-top-navbar__shell">
+      <?php if (!$isInicio) : ?>
+        <a
+          class="btn btn-outline-primary ag-icon-button ag-top-navbar__back"
+          href="index.php?ruta=inicio"
+          aria-label="Regresar al menú principal"
+        >
+          <span aria-hidden="true">&gt;</span>
+        </a>
+      <?php endif; ?>
       <a class="navbar-brand fw-semibold" href="index.php?ruta=inicio">
         <i class="fas fa-cubes me-2"></i>
         Argus Apps
@@ -28,18 +37,6 @@ $notificacionesActivas = !empty($_SESSION['notificaciones_activas']);
             aria-label="Mostrar navegación"
           >
             <span class="navbar-toggler-icon"></span>
-          </button>
-          <button
-            type="button"
-            class="btn btn-outline-primary ag-icon-button d-lg-none"
-            data-ag-app-launcher="true"
-            aria-label="Abrir lanzador de aplicaciones"
-          >
-            <i class="fas fa-th-large" aria-hidden="true"></i>
-          </button>
-          <button type="button" class="btn btn-outline-primary ag-app-launcher d-none d-lg-inline-flex" data-ag-app-launcher="true">
-            <i class="fas fa-th-large me-1" aria-hidden="true"></i>
-            <span>Aplicaciones</span>
           </button>
         <?php endif; ?>
         <div
@@ -93,10 +90,6 @@ $notificacionesActivas = !empty($_SESSION['notificaciones_activas']);
     <?php if (!$isInicio) : ?>
       <div class="collapse navbar-collapse ag-top-navbar__collapse" id="agTopNavbar">
         <div class="ag-top-navbar__collapse-inner">
-          <button type="button" class="btn btn-outline-primary ag-app-launcher d-lg-none w-100" data-ag-app-launcher="true">
-            <i class="fas fa-th-large me-1" aria-hidden="true"></i>
-            <span>Aplicaciones</span>
-          </button>
           <form class="ag-top-navbar__search" role="search" data-ag-app-search-form>
             <div class="input-group input-group-sm">
               <span class="input-group-text"><i class="fas fa-search"></i></span>

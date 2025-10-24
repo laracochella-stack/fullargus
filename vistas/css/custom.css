@@ -1830,6 +1830,16 @@ table.dataTable thead th.no-sort::before {
   padding: 0;
 }
 
+.ag-top-navbar__back {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ag-top-navbar__back span {
+  line-height: 1;
+}
+
 .ag-top-navbar__collapse-inner {
   display: flex;
   flex-direction: column;
