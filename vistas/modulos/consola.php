@@ -1,5 +1,6 @@
 <?php
 use App\Controllers\ControladorConsola;
+use App\Support\AppNavigation;
 /**
  * Consola administrativa para gestionar anuncios globales.
  */
@@ -56,6 +57,8 @@ ag_render_content_header([
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Consola'],
     ],
+    'app' => AppNavigation::APP_CONFIGURACION,
+    'route' => 'consola',
 ]);
 ?>
 

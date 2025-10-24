@@ -8087,6 +8087,206 @@ document.addEventListener('DOMContentLoaded', () => {
         programarActualizacion();
     };
 
+    const appFilterState = {};
+
+    const normalizeSearchText = (value) => {
+        let text = value == null ? '' : String(value);
+        text = text.toLowerCase();
+        if (typeof text.normalize === 'function') {
+            return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+        return text;
+    };
+
+    const applyAppFilter = (group, rawTerm) => {
+        const grid = document.querySelector(`[data-ag-app-grid="${group}"]`);
+        const emptyHint = document.querySelector(`[data-ag-app-empty="${group}"]`);
+        const term = normalizeSearchText(rawTerm || '');
+
+        if (!grid) {
+            appFilterState[group] = rawTerm || '';
+            return;
+        }
+
+        const wrappers = grid.querySelectorAll('.ag-app-card-wrapper');
+        let matches = 0;
+        wrappers.forEach((wrapper) => {
+            const haystack = normalizeSearchText(wrapper.dataset.appSearch || '');
+            const visible = term === '' || haystack.indexOf(term) !== -1;
+            wrapper.hidden = !visible;
+            wrapper.classList.toggle('ag-app-card-wrapper--hidden', !visible);
+            if (visible) {
+                matches += 1;
+            }
+        });
+
+        if (emptyHint) {
+            emptyHint.hidden = matches > 0;
+        }
+
+        appFilterState[group] = rawTerm || '';
+    };
+
+    const syncFilterInputs = (groups, displayValue, sourceInput) => {
+        const selector = '[data-ag-app-filter]';
+        document.querySelectorAll(selector).forEach((input) => {
+            if (input === sourceInput) {
+                return;
+            }
+            const attr = input.getAttribute('data-ag-app-filter') || '';
+            const inputGroups = attr.split(/[\s,]+/).filter(Boolean);
+            const sharesGroup = groups.some((group) => inputGroups.includes(group));
+            if (!sharesGroup) {
+                return;
+            }
+            if (input.value !== displayValue) {
+                input.value = displayValue;
+            }
+        });
+    };
+
+    const registerAppFilters = () => {
+        const inputs = document.querySelectorAll('[data-ag-app-filter]');
+        if (!inputs.length) {
+            return;
+        }
+
+        document.querySelectorAll('[data-ag-app-grid]').forEach((gridEl) => {
+            const group = gridEl.getAttribute('data-ag-app-grid');
+            if (!group) {
+                return;
+            }
+            if (!Object.prototype.hasOwnProperty.call(appFilterState, group)) {
+                appFilterState[group] = '';
+            }
+            applyAppFilter(group, appFilterState[group]);
+        });
+
+        inputs.forEach((input) => {
+            const attr = input.getAttribute('data-ag-app-filter') || '';
+            const groups = attr.split(/[\s,]+/).filter(Boolean);
+            if (!groups.length) {
+                return;
+            }
+
+            let initialValue = '';
+            for (let index = 0; index < groups.length; index += 1) {
+                const group = groups[index];
+                if (Object.prototype.hasOwnProperty.call(appFilterState, group) && appFilterState[group]) {
+                    initialValue = appFilterState[group];
+                    break;
+                }
+            }
+            if (initialValue && input.value !== initialValue) {
+                input.value = initialValue;
+            }
+
+            const handleInput = () => {
+                const displayValue = input.value || '';
+                groups.forEach((group) => {
+                    applyAppFilter(group, displayValue);
+                });
+                syncFilterInputs(groups, displayValue, input);
+            };
+
+            input.addEventListener('input', handleInput);
+            input.addEventListener('search', handleInput);
+        });
+    };
+
+    const initAppDrawer = () => {
+        const drawer = document.getElementById('agAppDrawer');
+        if (!drawer) {
+            return;
+        }
+
+        const launchers = document.querySelectorAll('[data-ag-app-launcher]');
+        if (!launchers.length) {
+            return;
+        }
+
+        const closeElements = drawer.querySelectorAll('[data-ag-app-close]');
+        const drawerInputs = drawer.querySelectorAll('[data-ag-app-filter~="drawer"]');
+        let lastFocusedElement = null;
+
+        const setDrawerVisibility = (visible) => {
+            if (visible) {
+                drawer.dataset.visible = '1';
+                drawer.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('ag-app-drawer-open');
+                const currentValue = appFilterState.drawer || '';
+                drawerInputs.forEach((input) => {
+                    if (input.value !== currentValue) {
+                        input.value = currentValue;
+                    }
+                });
+                applyAppFilter('drawer', currentValue);
+                window.setTimeout(() => {
+                    if (drawerInputs.length) {
+                        drawerInputs[0].focus();
+                        drawerInputs[0].select();
+                    }
+                }, 80);
+            } else {
+                drawer.dataset.visible = '0';
+                drawer.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('ag-app-drawer-open');
+                if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+                    lastFocusedElement.focus();
+                }
+            }
+        };
+
+        const openDrawer = (event) => {
+            if (event) {
+                event.preventDefault();
+            }
+            if (drawer.dataset.visible === '1') {
+                return;
+            }
+            lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            setDrawerVisibility(true);
+        };
+
+        const closeDrawer = (event) => {
+            if (event) {
+                event.preventDefault();
+            }
+            if (drawer.dataset.visible !== '1') {
+                return;
+            }
+            setDrawerVisibility(false);
+        };
+
+        launchers.forEach((launcher) => {
+            launcher.addEventListener('click', openDrawer);
+            launcher.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    openDrawer(event);
+                }
+            });
+        });
+
+        closeElements.forEach((element) => {
+            element.addEventListener('click', closeDrawer);
+        });
+
+        drawer.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target instanceof HTMLElement && target.dataset.agAppClose === 'true') {
+                closeDrawer(event);
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && drawer.dataset.visible === '1') {
+                closeDrawer(event);
+            }
+        });
+    };
+
+    registerAppFilters();
+    initAppDrawer();
     iniciarRelojPie();
 
 });

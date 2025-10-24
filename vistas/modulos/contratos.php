@@ -1,6 +1,7 @@
 <?php
 use App\Controllers\ControladorContratos;
 use App\Controllers\ControladorParametros;
+use App\Support\AppNavigation;
 /**
  * Módulo de contratos: lista de contratos.
  */
@@ -145,6 +146,8 @@ ag_render_content_header([
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Contratos']
     ],
+    'app' => AppNavigation::APP_CONTRATOS,
+    'route' => 'contratos',
 ]);
 ?>
 <section class="content">

@@ -1774,3 +1774,246 @@ table.dataTable thead th.no-sort::before {
 .ag-ux-hint-inline .ag-ux-hint-title {
   font-size: 0.9rem;
 }
+
+/* === Barra superior estilo Odoo === */
+.ag-top-navbar {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 12px rgba(15, 23, 42, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+.ag-top-navbar .navbar-brand {
+  font-size: clamp(1rem, 0.95rem + 0.6vw, 1.35rem);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ag-app-launcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  transition: background-color var(--ag-motion-duration) ease;
+}
+
+.ag-app-launcher:hover {
+  background-color: rgba(60, 141, 188, 0.08);
+}
+
+.ag-app-navigation__list .nav-link {
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
+  font-weight: 500;
+}
+
+.ag-app-navigation__list .nav-link.active {
+  background-color: #3c8dbc;
+  color: #fff;
+}
+
+.ag-app-navigation__list .dropdown-menu {
+  border-radius: 0.75rem;
+  box-shadow: 0 0.75rem 2rem rgba(15, 23, 42, 0.12);
+  padding: 0.5rem 0;
+}
+
+.ag-app-navigation__list .dropdown-item.active,
+.ag-app-navigation__list .dropdown-item:active {
+  background-color: rgba(60, 141, 188, 0.15);
+  color: #0c2d48;
+  font-weight: 600;
+}
+
+/* === Tarjetas de aplicaciones === */
+.ag-app-card-wrapper {
+  transition: transform var(--ag-motion-duration) var(--ag-motion-spring),
+    opacity var(--ag-motion-duration) ease;
+}
+
+.ag-app-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.4rem 1.25rem;
+  border-radius: var(--ag-card-radius);
+  background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  height: 100%;
+  overflow: hidden;
+}
+
+.ag-app-card__link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ag-app-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 1rem;
+  color: #fff;
+  font-size: 1.3rem;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+
+.ag-app-card__icon.bg-warning.text-dark {
+  color: #212529;
+}
+
+.ag-app-card__title {
+  font-size: clamp(1.05rem, 0.95rem + 0.35vw, 1.3rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.ag-app-card__description {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.ag-app-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.ag-app-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  background-color: rgba(59, 130, 246, 0.08);
+  color: #1d4ed8;
+  text-decoration: none;
+  transition: background-color var(--ag-motion-duration) ease;
+}
+
+.ag-app-card__action:hover {
+  background-color: rgba(59, 130, 246, 0.15);
+}
+
+.ag-app-card--drawer {
+  box-shadow: none;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: #fff;
+}
+
+.ag-app-card__action--drawer {
+  background-color: rgba(107, 114, 128, 0.08);
+  color: #374151;
+}
+
+.ag-app-grid-toolbar h2 {
+  font-weight: 600;
+}
+
+.ag-app-grid-search .input-group-lg .form-control {
+  border-radius: 999px;
+}
+
+.ag-app-grid-empty[hidden] {
+  display: none !important;
+}
+
+.ag-app-alert-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: rgba(245, 158, 11, 0.18);
+  color: #b45309;
+  font-size: 1.2rem;
+}
+
+/* === Drawer de aplicaciones === */
+.ag-app-drawer {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: stretch;
+  justify-content: flex-end;
+  z-index: 2040;
+}
+
+.ag-app-drawer[data-visible="1"] {
+  display: flex;
+}
+
+.ag-app-drawer__backdrop {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(3px);
+}
+
+.ag-app-drawer__panel {
+  width: min(480px, 100%);
+  background: #fff;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: -24px 0 48px rgba(15, 23, 42, 0.16);
+}
+
+.ag-app-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ag-app-drawer__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ag-app-drawer__search .form-control {
+  border-radius: 999px;
+}
+
+.ag-app-drawer__content {
+  overflow-y: auto;
+  max-height: calc(100vh - 9rem);
+  padding-right: 0.25rem;
+}
+
+@media (max-width: 575.98px) {
+  .ag-app-card {
+    padding: 1.1rem 1rem;
+  }
+
+  .ag-app-grid-toolbar {
+    text-align: center;
+  }
+
+  .ag-app-grid-search .input-group-lg {
+    width: 100%;
+  }
+}
+
+body.ag-app-drawer-open {
+  overflow: hidden;
+}
+
+.ag-app-card-wrapper--hidden {
+  display: none !important;
+}

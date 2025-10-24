@@ -3,6 +3,7 @@ use App\Controllers\ControladorClientes;
 use App\Controllers\ControladorContratos;
 use App\Controllers\ControladorDesarrollos;
 use App\Controllers\ControladorParametros;
+use App\Support\AppNavigation;
 /**
  * Módulo de lista de clientes.
  */
@@ -67,6 +68,8 @@ ag_render_content_header([
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Clientes'],
     ],
+    'app' => AppNavigation::APP_CLIENTES,
+    'route' => 'clientes',
 ]);
 ?>
 

@@ -3,15 +3,31 @@
  * Cabezote (barra superior) de la aplicación.
  */
 ?>
-<nav class="main-header navbar navbar-expand navbar-white navbar-light">
-  <!-- Izquierda: botón para ocultar/mostrar sidebar -->
-  <ul class="navbar-nav">
-    <li class="nav-item">
-      <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
-    </li>
-  </ul>
-  <!-- Derecha: notificaciones y menú de usuario -->
-  <ul class="navbar-nav ms-auto">
+<nav class="main-header navbar navbar-expand-lg navbar-white navbar-light ag-top-navbar">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-semibold" href="index.php?ruta=inicio">
+      <i class="fas fa-cubes me-2"></i>
+      Argus Apps
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#agTopNavbar" aria-controls="agTopNavbar" aria-expanded="false" aria-label="Mostrar navegación">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="agTopNavbar">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+        <li class="nav-item me-lg-2">
+          <button type="button" class="btn btn-outline-primary ag-app-launcher" data-ag-app-launcher="true">
+            <i class="fas fa-th-large me-1"></i>
+            Aplicaciones
+          </button>
+        </li>
+      </ul>
+      <form class="d-none d-lg-flex align-items-center me-3" role="search" data-ag-app-search-form>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="search" class="form-control" placeholder="Buscar aplicación" aria-label="Buscar aplicación" autocomplete="off" data-ag-app-filter="grid drawer">
+        </div>
+      </form>
+      <ul class="navbar-nav ms-auto align-items-lg-center">
     <?php $notificacionesActivas = !empty($_SESSION['notificaciones_activas']); ?>
     <li class="nav-item dropdown<?php echo $notificacionesActivas ? '' : ' notificaciones-desactivadas'; ?>" id="dropdownNotificaciones" data-notifications-enabled="<?php echo $notificacionesActivas ? '1' : '0'; ?>">
         <a class="nav-link position-relative<?php echo $notificacionesActivas ? '' : ' text-muted'; ?>" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false" aria-haspopup="true" aria-label="Abrir panel de notificaciones">
@@ -47,5 +63,7 @@
         <li><a class="dropdown-item" href="index.php?ruta=salir"><i class="fas fa-sign-out-alt me-2"></i>Salir</a></li>
       </ul>
     </li>
-  </ul>
+      </ul>
+    </div>
+  </div>
 </nav>

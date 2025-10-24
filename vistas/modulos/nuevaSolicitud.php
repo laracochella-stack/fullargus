@@ -3,6 +3,7 @@ use App\Controllers\ControladorClientes;
 use App\Controllers\ControladorDesarrollos;
 use App\Controllers\ControladorParametros;
 use App\Controllers\ControladorSolicitudes;
+use App\Support\AppNavigation;
 
 $resultadoGuardado = ControladorSolicitudes::ctrGuardarSolicitud();
 $csrfToken = $_SESSION['csrf_token'] ?? '';
@@ -307,6 +308,8 @@ ag_render_content_header([
         ['label' => 'Solicitudes', 'url' => 'index.php?ruta=solicitudes'],
         ['label' => $tituloSolicitud],
     ],
+    'app' => AppNavigation::APP_SOLICITUDES,
+    'route' => 'nuevaSolicitud',
 ]);
 require_once 'vistas/partials/record_toolbar.php';
 

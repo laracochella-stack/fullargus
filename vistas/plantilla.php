@@ -6,6 +6,7 @@
 
 use App\Controllers\ControladorContratos;
 use App\Controllers\ControladorSolicitudes;
+use App\Support\AppNavigation;
 use App\Support\AssetVersion;
 
 $timezone = $_ENV['APP_TIMEZONE']
@@ -129,40 +130,51 @@ if ($rutaActual === '') {
     $rutaActual = 'inicio';
 }
 $sesionActiva = isset($_SESSION['iniciarSesion']) && $_SESSION['iniciarSesion'] === 'ok';
-$collapseSidebar = $sesionActiva && $rutaActual !== 'inicio';
-$bodyClasses = 'hold-transition sidebar-mini';
-if ($collapseSidebar) {
-    $bodyClasses .= ' sidebar-collapse';
+$bodyClasses = 'hold-transition layout-top-nav';
+$navigationModules = [];
+if ($sesionActiva) {
+    try {
+        $navigationModules = AppNavigation::getAppCards($_SESSION ?? []);
+    } catch (\Throwable $exception) {
+        $navigationModules = [];
+    }
 }
 ?>
 <body class="<?php echo htmlspecialchars($bodyClasses, ENT_QUOTES, 'UTF-8'); ?>">
-<script>
-    (function enforceSidebarDefaultState() {
-        var shouldCollapse = <?php echo $collapseSidebar ? 'true' : 'false'; ?>;
-        try {
-            if (shouldCollapse) {
-                window.localStorage.setItem('AdminLTE:SidebarCollapse', '1');
-            } else {
-                window.localStorage.removeItem('AdminLTE:SidebarCollapse');
-            }
-        } catch (error) {
-            console.warn('No fue posible actualizar la preferencia del menú lateral.', error);
-        }
-
-        if (shouldCollapse) {
-            document.body.classList.add('sidebar-collapse');
-        } else {
-            document.body.classList.remove('sidebar-collapse');
-        }
-    })();
-</script>
 <?php
 if ($sesionActiva) {
     echo '<div class="wrapper">';
     include 'modulos/cabezote.php';
-    include 'modulos/menu.php';
+    if (!empty($navigationModules)) {
+        echo '<div id="agAppDrawer" class="ag-app-drawer" data-visible="0" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Selector de aplicaciones">';
+        echo '<div class="ag-app-drawer__backdrop" data-ag-app-close="true"></div>';
+        echo '<div class="ag-app-drawer__panel">';
+        echo '<div class="ag-app-drawer__header">';
+        echo '<h2 class="ag-app-drawer__title"><i class="fas fa-cubes me-2"></i>Aplicaciones</h2>';
+        echo '<button type="button" class="btn-close" aria-label="Cerrar" data-ag-app-close="true"></button>';
+        echo '</div>';
+        echo '<div class="ag-app-drawer__search input-group">';
+        echo '<span class="input-group-text"><i class="fas fa-search"></i></span>';
+        echo '<input type="search" class="form-control" placeholder="Buscar aplicación" autocomplete="off" data-ag-app-filter="drawer">';
+        echo '</div>';
+        echo '<div class="ag-app-drawer__content">';
+        echo '<div class="row g-3" data-ag-app-grid="drawer">';
+        require_once __DIR__ . '/partials/app_card.php';
+        foreach ($navigationModules as $module) {
+            ag_render_app_card($module, [
+                'wrapper_class' => 'col-12 col-sm-6',
+                'card_class' => 'ag-app-card ag-app-card--drawer',
+                'action_class' => 'ag-app-card__action ag-app-card__action--drawer',
+            ]);
+        }
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+    }
     // Envolvemos el contenido en un content-wrapper para respetar la estructura de AdminLTE
     echo '<div class="content-wrapper">';
+    echo '<div class="content">';
     // Determinar la ruta solicitada
     if (isset($_GET['ruta'])) {
         $ruta = $_GET['ruta'];
@@ -175,6 +187,7 @@ if ($sesionActiva) {
     } else {
         include 'modulos/inicio.php';
     }
+    echo '</div>';
     echo '</div>'; // cierre de content-wrapper
     include 'modulos/footer.php';
     echo '</div>';

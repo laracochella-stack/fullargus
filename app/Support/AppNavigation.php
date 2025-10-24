@@ -1,0 +1,387 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Support;
+
+/**
+ * Helper to centralize application navigation metadata and visibility.
+ */
+final class AppNavigation
+{
+    public const APP_INICIO = 'inicio';
+    public const APP_SOLICITUDES = 'solicitudes';
+    public const APP_CONTRATOS = 'contratos';
+    public const APP_CLIENTES = 'clientes';
+    public const APP_DESARROLLOS = 'desarrollos';
+    public const APP_CONFIGURACION = 'configuracion';
+
+    /**
+     * Returns application modules filtered according to the current session.
+     *
+     * Each module definition contains:
+     * - key: string identifier (array key)
+     * - label: display name
+     * - description: short text for the card/grid
+     * - icon: FontAwesome classes
+     * - color: contextual color class for icons/badges
+     * - route: default route for the module (string|null)
+     * - visible: whether the module can be displayed
+     * - children: nested quick links/actions (each child may include `visible`)
+     * - nav_peers: preferred ordering of modules in the contextual header nav
+     * - keywords: optional search tokens for the app drawer/grid
+     * - include_in_grid: whether this module should appear in the application grid
+     *
+     * @param array<string,mixed> $session Session data for permission checks
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function getModules(array $session = []): array
+    {
+        $permission = self::normalizePermission($session['permission'] ?? null);
+
+        $canClientes = self::canClientes($permission);
+        $canContratos = $canClientes;
+        $canDesarrollos = self::canDesarrollos($permission);
+        $canParametros = self::canParametros($permission);
+        $canUsuarios = self::canUsuarios($permission);
+        $canConsola = self::canConsola($permission);
+
+        $modules = [
+            self::APP_INICIO => [
+                'key' => self::APP_INICIO,
+                'label' => 'Inicio',
+                'description' => 'Volver al panel principal de aplicaciones.',
+                'icon' => 'fas fa-cubes',
+                'color' => 'bg-primary',
+                'route' => 'inicio',
+                'visible' => true,
+                'children' => [],
+                'nav_peers' => [
+                    self::APP_SOLICITUDES,
+                    self::APP_CLIENTES,
+                    self::APP_CONTRATOS,
+                    self::APP_CONFIGURACION,
+                    self::APP_DESARROLLOS,
+                ],
+                'keywords' => ['dashboard', 'home', 'apps'],
+                'include_in_grid' => false,
+            ],
+            self::APP_SOLICITUDES => [
+                'key' => self::APP_SOLICITUDES,
+                'label' => 'Solicitudes',
+                'description' => 'Gestiona las solicitudes de clientes desde la creación hasta su aprobación.',
+                'icon' => 'fas fa-inbox',
+                'color' => 'bg-primary',
+                'route' => 'solicitudes',
+                'visible' => true,
+                'children' => [
+                    [
+                        'label' => 'Panel de solicitudes',
+                        'route' => 'solicitudes',
+                        'icon' => 'fas fa-clipboard-list',
+                        'visible' => true,
+                    ],
+                    [
+                        'label' => 'Nueva solicitud',
+                        'route' => 'nuevaSolicitud',
+                        'icon' => 'fas fa-paper-plane',
+                        'visible' => true,
+                    ],
+                ],
+                'nav_peers' => [
+                    self::APP_SOLICITUDES,
+                    self::APP_CLIENTES,
+                    self::APP_CONTRATOS,
+                    self::APP_CONFIGURACION,
+                    self::APP_DESARROLLOS,
+                ],
+                'keywords' => ['folios', 'seguimiento', 'captura'],
+                'include_in_grid' => true,
+            ],
+            self::APP_CONTRATOS => [
+                'key' => self::APP_CONTRATOS,
+                'label' => 'Contratos',
+                'description' => 'Administra la generación y seguimiento de contratos vigentes.',
+                'icon' => 'fas fa-file-signature',
+                'color' => 'bg-success',
+                'route' => $canContratos ? 'contratos' : null,
+                'visible' => $canContratos,
+                'children' => [
+                    [
+                        'label' => 'Listado de contratos',
+                        'route' => 'contratos',
+                        'icon' => 'fas fa-file-contract',
+                        'visible' => $canContratos,
+                    ],
+                    [
+                        'label' => 'Generar contrato',
+                        'route' => 'crearContrato',
+                        'icon' => 'fas fa-pen-to-square',
+                        'visible' => $canContratos,
+                    ],
+                ],
+                'nav_peers' => [
+                    self::APP_CONTRATOS,
+                    self::APP_CLIENTES,
+                    self::APP_SOLICITUDES,
+                    self::APP_CONFIGURACION,
+                    self::APP_DESARROLLOS,
+                ],
+                'keywords' => ['documentos', 'firmas', 'acuerdos'],
+                'include_in_grid' => $canContratos,
+            ],
+            self::APP_CLIENTES => [
+                'key' => self::APP_CLIENTES,
+                'label' => 'Clientes',
+                'description' => 'Consulta y registra la información de clientes y prospectos.',
+                'icon' => 'fas fa-users',
+                'color' => 'bg-warning text-dark',
+                'route' => $canClientes ? 'clientes' : null,
+                'visible' => $canClientes,
+                'children' => [
+                    [
+                        'label' => 'Listado de clientes',
+                        'route' => 'clientes',
+                        'icon' => 'fas fa-address-book',
+                        'visible' => $canClientes,
+                    ],
+                ],
+                'nav_peers' => [
+                    self::APP_CLIENTES,
+                    self::APP_SOLICITUDES,
+                    self::APP_CONTRATOS,
+                    self::APP_CONFIGURACION,
+                    self::APP_DESARROLLOS,
+                ],
+                'keywords' => ['personas', 'prospectos', 'cartera'],
+                'include_in_grid' => $canClientes,
+            ],
+            self::APP_DESARROLLOS => [
+                'key' => self::APP_DESARROLLOS,
+                'label' => 'Desarrollos',
+                'description' => 'Gestiona los desarrollos inmobiliarios y sus características.',
+                'icon' => 'fas fa-city',
+                'color' => 'bg-info',
+                'route' => $canDesarrollos ? 'desarrollos' : null,
+                'visible' => $canDesarrollos,
+                'children' => [
+                    [
+                        'label' => 'Listado de desarrollos',
+                        'route' => 'desarrollos',
+                        'icon' => 'fas fa-city',
+                        'visible' => $canDesarrollos,
+                    ],
+                ],
+                'nav_peers' => [
+                    self::APP_DESARROLLOS,
+                    self::APP_CLIENTES,
+                    self::APP_SOLICITUDES,
+                    self::APP_CONFIGURACION,
+                    self::APP_CONTRATOS,
+                ],
+                'keywords' => ['inmuebles', 'proyectos'],
+                'include_in_grid' => $canDesarrollos,
+            ],
+            self::APP_CONFIGURACION => [
+                'key' => self::APP_CONFIGURACION,
+                'label' => 'Configuración',
+                'description' => 'Administra parámetros, roles de usuario y herramientas avanzadas.',
+                'icon' => 'fas fa-sliders-h',
+                'color' => 'bg-dark',
+                'route' => $canParametros ? 'parametros' : ($canUsuarios ? 'roles' : ($canConsola ? 'consola' : null)),
+                'visible' => $canParametros || $canUsuarios || $canConsola,
+                'children' => [
+                    [
+                        'label' => 'Parámetros del sistema',
+                        'route' => 'parametros',
+                        'icon' => 'fas fa-sliders-h',
+                        'visible' => $canParametros,
+                    ],
+                    [
+                        'label' => 'Usuarios y roles',
+                        'route' => 'roles',
+                        'icon' => 'fas fa-user-shield',
+                        'visible' => $canUsuarios,
+                    ],
+                    [
+                        'label' => 'Consola',
+                        'route' => 'consola',
+                        'icon' => 'fas fa-terminal',
+                        'visible' => $canConsola,
+                    ],
+                ],
+                'nav_peers' => [
+                    self::APP_CONFIGURACION,
+                    self::APP_SOLICITUDES,
+                    self::APP_CLIENTES,
+                    self::APP_CONTRATOS,
+                    self::APP_DESARROLLOS,
+                ],
+                'keywords' => ['ajustes', 'roles', 'parámetros', 'sistema'],
+                'include_in_grid' => $canParametros || $canUsuarios || $canConsola,
+            ],
+        ];
+
+        // Filter visibility and nested children.
+        foreach ($modules as $key => &$module) {
+            $module['key'] = $key;
+            if (empty($module['visible'])) {
+                unset($modules[$key]);
+                continue;
+            }
+
+            $children = $module['children'] ?? [];
+            if (!is_array($children)) {
+                $children = [];
+            }
+            $module['children'] = [];
+            foreach ($children as $child) {
+                if (empty($child['visible'])) {
+                    continue;
+                }
+                $module['children'][] = [
+                    'label' => (string)($child['label'] ?? ''),
+                    'route' => $child['route'] ?? null,
+                    'icon' => (string)($child['icon'] ?? ''),
+                ];
+            }
+        }
+        unset($module);
+
+        return $modules;
+    }
+
+    /**
+     * Returns navigation items for the contextual header.
+     *
+     * @param string $currentApp   Module identifier to highlight.
+     * @param array<string,mixed> $session Session data for permission checks.
+     * @param string|null $currentRoute Optional current route to highlight child entries.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getNavigationMenu(string $currentApp, array $session = [], ?string $currentRoute = null): array
+    {
+        $modules = self::getModules($session);
+        if (!isset($modules[$currentApp])) {
+            // If the requested app is not visible fall back to the first module.
+            $currentApp = array_key_first($modules) ?? self::APP_SOLICITUDES;
+        }
+
+        $preferredOrder = $modules[$currentApp]['nav_peers'] ?? [];
+        if (!$preferredOrder) {
+            $preferredOrder = [
+                self::APP_SOLICITUDES,
+                self::APP_CLIENTES,
+                self::APP_CONTRATOS,
+                self::APP_CONFIGURACION,
+                self::APP_DESARROLLOS,
+            ];
+        }
+
+        $order = array_unique([
+            $currentApp,
+            ...$preferredOrder,
+        ]);
+
+        $items = [];
+        foreach ($order as $moduleKey) {
+            if (!isset($modules[$moduleKey])) {
+                continue;
+            }
+            $module = $modules[$moduleKey];
+            $route = $module['route'] ?? null;
+            $url = self::buildUrl($route);
+            $children = [];
+            foreach ($module['children'] as $child) {
+                $childRoute = $child['route'] ?? null;
+                $children[] = [
+                    'label' => $child['label'],
+                    'url' => self::buildUrl($childRoute),
+                    'icon' => $child['icon'] ?? '',
+                    'active' => $currentRoute !== null && $childRoute === $currentRoute,
+                ];
+            }
+
+            $items[] = [
+                'key' => $moduleKey,
+                'label' => $module['label'],
+                'icon' => $module['icon'],
+                'url' => $url,
+                'active' => $moduleKey === $currentApp,
+                'children' => $children,
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Returns application cards metadata for grid/drawer rendering.
+     *
+     * @param array<string,mixed> $session
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getAppCards(array $session = []): array
+    {
+        $modules = self::getModules($session);
+        $cards = [];
+        foreach ($modules as $key => $module) {
+            if (!($module['include_in_grid'] ?? false)) {
+                continue;
+            }
+            $cards[] = $module;
+        }
+
+        return $cards;
+    }
+
+    /**
+     * Normalizes the permission string from session data.
+     */
+    private static function normalizePermission($permission): string
+    {
+        if (!is_string($permission)) {
+            return 'user';
+        }
+
+        $permission = strtolower(trim($permission));
+        return $permission !== '' ? $permission : 'user';
+    }
+
+    private static function canClientes(string $permission): bool
+    {
+        return in_array($permission, ['moderator', 'senior', 'owner', 'admin'], true);
+    }
+
+    private static function canDesarrollos(string $permission): bool
+    {
+        return in_array($permission, ['senior', 'owner', 'admin'], true);
+    }
+
+    private static function canParametros(string $permission): bool
+    {
+        return in_array($permission, ['senior', 'owner', 'admin'], true);
+    }
+
+    private static function canUsuarios(string $permission): bool
+    {
+        return in_array($permission, ['owner', 'admin'], true);
+    }
+
+    private static function canConsola(string $permission): bool
+    {
+        return $permission === 'admin';
+    }
+
+    private static function buildUrl(?string $route): string
+    {
+        if ($route === null || $route === '') {
+            return '#';
+        }
+
+        return 'index.php?ruta=' . rawurlencode($route);
+    }
+}

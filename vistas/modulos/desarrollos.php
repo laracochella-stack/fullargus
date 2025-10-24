@@ -1,6 +1,7 @@
 <?php
 use App\Controllers\ControladorDesarrollos;
 use App\Controllers\ControladorParametros;
+use App\Support\AppNavigation;
 /**
  * Módulo de lista de desarrollos.
  * Muestra una tabla con los desarrollos registrados y permite editarlos mediante un modal.
@@ -113,6 +114,8 @@ ag_render_content_header([
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Desarrollos'],
     ],
+    'app' => AppNavigation::APP_DESARROLLOS,
+    'route' => 'desarrollos',
 ]);
 ?>
 <section class="content">
