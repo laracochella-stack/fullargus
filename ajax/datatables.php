@@ -953,7 +953,7 @@ switch ($resource) {
                 ? '<input type="checkbox" class="select-contrato" disabled>'
                 : '<input type="checkbox" class="select-contrato">';
 
-            $btnVerContrato = sprintf('<a href="index.php?ruta=crearContrato&amp;contrato_id=%1$d&amp;ver=1" class="btn btn-info btn-sm" title="Ver contrato"><i class="fas fa-eye"></i></a>', $id);
+            $btnVerContrato = sprintf('<a href="index.php?ruta=crearContrato&amp;contrato_id=%1$d" class="btn btn-info btn-sm" title="Ver contrato"><i class="fas fa-eye"></i></a>', $id);
             $btnPlaceholders = sprintf('<button type="button" class="btn btn-outline-info btn-sm btnVerPlaceholdersContrato" title="Ver placeholders" data-contrato-id="%1$d"><i class="fas fa-tags"></i></button>', $id);
             $btnEditarContrato = sprintf('<a href="index.php?ruta=crearContrato&amp;contrato_id=%1$d" class="btn btn-primary btn-sm%2$s" title="Editar"%3$s><i class="fas fa-pen"></i></a>', $id, $esCancelado ? ' disabled' : '', $esCancelado ? ' aria-disabled="true" tabindex="-1"' : '');
             $btnVerSolicitud = $solicitudId > 0
@@ -999,7 +999,7 @@ switch ($resource) {
                 'data-contrato-id' => (string)$id,
                 'data-estatus' => (string)$estatusValor,
                 'data-contrato' => $jsonContrato !== false ? $jsonContrato : '{}',
-                'data-view-url' => $escape(sprintf('index.php?ruta=crearContrato&contrato_id=%d&ver=1', $id)),
+                'data-view-url' => $escape(sprintf('index.php?ruta=crearContrato&contrato_id=%d', $id)),
             ];
 
             $data[] = [
@@ -1102,7 +1102,7 @@ switch ($resource) {
                 : '<span class="text-muted">—</span>';
 
             $accionesPartes = [];
-            $urlVerSolicitud = sprintf('index.php?ruta=nuevaSolicitud&id=%d&modo=ver', $solicitudId);
+            $urlVerSolicitud = sprintf('index.php?ruta=nuevaSolicitud&id=%d', $solicitudId);
             $accionesPartes[] = sprintf('<a href="%1$s" class="btn btn-info btn-sm" title="Ver solicitud"><i class="fas fa-eye"></i></a>', $escape($urlVerSolicitud));
 
             if ($tieneContrato && $contratoId > 0) {

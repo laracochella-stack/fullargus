@@ -730,6 +730,23 @@ label.form-label.ag-placeholder-label {
   font-size: 0.875rem;
 }
 
+.ag-data-table th.ag-table-column-select,
+.ag-data-table td.ag-table-column-select {
+  width: 3.25rem;
+  min-width: 3.25rem;
+}
+
+.ag-data-table td.ag-table-column-select .form-check {
+  padding-left: 0;
+  justify-content: center;
+}
+
+.ag-data-table td.ag-table-column-select .form-check-input {
+  margin-left: 0;
+  float: none;
+  position: static;
+}
+
 .ag-data-table thead th {
   background: #f5f7fb;
   color: #495057;

@@ -3404,7 +3404,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 resource: 'contratos',
                 columns: [
                     { data: null, defaultContent: '', className: 'dtr-control dt-control', orderable: false, searchable: false, responsivePriority: 1 },
-                    { data: 'seleccion', orderable: false, searchable: false, className: 'text-center', responsivePriority: 2 },
+                    { data: 'seleccion', orderable: false, searchable: false, className: 'text-center ag-table-column-select', responsivePriority: 2 },
                     { data: 'id', className: 'text-nowrap', responsivePriority: 3 },
                     { data: 'creado', responsivePriority: 4 },
                     { data: 'propietario', responsivePriority: 3 },
@@ -3419,7 +3419,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 resource: 'solicitudes',
                 columns: [
                     { data: null, defaultContent: '', className: 'dtr-control dt-control', orderable: false, searchable: false, responsivePriority: 1 },
-                    { data: 'seleccion', orderable: false, searchable: false, className: 'text-center', responsivePriority: 2 },
+                    { data: 'seleccion', orderable: false, searchable: false, className: 'text-center ag-table-column-select', responsivePriority: 2 },
                     { data: 'folio', responsivePriority: 3 },
                     { data: 'nombre', responsivePriority: 1 },
                     { data: 'estado', responsivePriority: 2 },
