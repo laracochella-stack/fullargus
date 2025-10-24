@@ -1,5 +1,6 @@
 <?php
 use App\Controllers\ControladorUsuarios;
+use App\Support\AppNavigation;
 /**
  * Módulo de gestión de usuarios/roles.
  * Permite al administrador crear nuevos usuarios y ver los existentes.
@@ -34,6 +35,8 @@ ag_render_content_header([
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Usuarios y roles'],
     ],
+    'app' => AppNavigation::APP_CONFIGURACION,
+    'route' => 'roles',
 ]);
 ?>
 <section class="content">

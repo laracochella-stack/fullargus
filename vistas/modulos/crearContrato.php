@@ -5,6 +5,7 @@ use App\Controllers\ControladorParametros;
 use App\Controllers\ControladorSolicitudes;
 use App\Models\ModeloClientes;
 use App\Models\ModeloContratos;
+use App\Support\AppNavigation;
 /**
  * Vista para crear un cliente y su contrato de manera unificada.
  * Este módulo reemplaza a los formularios modales y se muestra como una página
@@ -219,6 +220,8 @@ ag_render_content_header([
         ['label' => 'Contratos', 'url' => 'index.php?ruta=contratos'],
         ['label' => $tituloPagina],
     ],
+    'app' => AppNavigation::APP_CONTRATOS,
+    'route' => 'crearContrato',
 ]);
 require_once 'vistas/partials/record_toolbar.php';
 

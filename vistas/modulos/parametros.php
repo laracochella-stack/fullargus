@@ -1,5 +1,6 @@
 <?php
 use App\Controllers\ControladorParametros;
+use App\Support\AppNavigation;
 /**
  * Panel de parámetros generales para administradores y moderadores.
  * Permite gestionar nacionalidades, tipos de contrato y subir plantillas.
@@ -48,6 +49,8 @@ ag_render_content_header([
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Parámetros'],
     ],
+    'app' => AppNavigation::APP_CONFIGURACION,
+    'route' => 'parametros',
 ]);
 ?>
 <section class="content">

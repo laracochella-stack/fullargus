@@ -1,5 +1,6 @@
 <?php
 use App\Controllers\ControladorSolicitudes;
+use App\Support\AppNavigation;
 
 $mensajeEstado = ControladorSolicitudes::ctrCambiarEstado();
 $permisoSolicitudes = strtolower(trim((string)($_SESSION['permission'] ?? 'user')));
@@ -162,6 +163,8 @@ ag_render_content_header([
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Solicitudes'],
     ],
+    'app' => AppNavigation::APP_SOLICITUDES,
+    'route' => 'solicitudes',
 ]);
 ?>
 <section class="content">
