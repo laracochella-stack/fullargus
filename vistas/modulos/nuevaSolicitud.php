@@ -161,7 +161,14 @@ $renderTelefonoSolicitud = static function (array $config) use ($soloLectura, $t
     }
 
     $colClass = $config['col'] ?? 'col-md-3';
-    $label = $config['label'] ?? '';
+    $showLabel = array_key_exists('showLabel', $config) ? (bool)$config['showLabel'] : true;
+    $label = '';
+    if (array_key_exists('label', $config)) {
+        $label = trim((string)$config['label']);
+    }
+    if ($showLabel && $label === '' && $name !== '') {
+        $label = ucwords(str_replace(['_', '-'], [' ', ' '], $name));
+    }
     $hintId = $config['hintId'] ?? ($id . 'Hint');
     $hintText = $config['hintText'] ?? $textoHintTelefono;
     $requirement = $config['requirement'] ?? $textoRequisitoTelefono;
@@ -264,7 +271,7 @@ $renderTelefonoSolicitud = static function (array $config) use ($soloLectura, $t
     ob_start();
     ?>
     <div class="<?php echo htmlspecialchars($colClass, ENT_QUOTES); ?>">
-      <?php if ($label !== '') : ?>
+      <?php if ($showLabel && $label !== '') : ?>
         <label class="form-label" for="<?php echo htmlspecialchars($id, ENT_QUOTES); ?>"><?php echo htmlspecialchars($label, ENT_QUOTES); ?></label>
       <?php endif; ?>
       <input <?php echo $renderAttrs($inputAttributes); ?>>
@@ -684,7 +691,7 @@ ag_render_record_toolbar([
               <input type="number" name="edad_actual" class="form-control form-control-sm<?php echo $esCampoFaltante('edad_actual') ? ' is-invalid' : ''; ?>" min="18" max="120" value="<?php echo $obtenerValor('edad_actual'); ?>"<?php echo $soloLectura ? ' readonly' : ''; ?><?php echo $enforceRequired ? ' required' : ''; ?>>
             </div>
             <div class="col-9 col-sm-6 col-md-2">
-              <label class="form-label" for="solicitudTipoIdentificacion">Identificación</label>
+              <label class="form-label" for="solicitudTipoIdentificacion" id="solicitudTipoIdentificacionLabel">Identificación</label>
               <select name="identificacion" id="solicitudTipoIdentificacion" class="form-select form-select-sm<?php echo $esCampoFaltante('identificacion') ? ' is-invalid' : ''; ?>" data-identificacion-select <?php echo $soloLectura ? 'disabled' : ''; ?><?php echo $enforceRequired ? ' required' : ''; ?>>
                 <option value="">Seleccione</option>
                 <option value="INE" <?php echo $identificacionSeleccionada === 'INE' ? 'selected' : ''; ?>>INE</option>
@@ -696,11 +703,11 @@ ag_render_record_toolbar([
               <?php endif; ?>
             </div>
             <div class="col-6 col-sm-6 col-md-2<?php echo $mostrarIdentificacionNumero ? '' : ' d-none'; ?>" data-identificacion-container="numero" aria-hidden="<?php echo $mostrarIdentificacionNumero ? 'false' : 'true'; ?>">
-              <label class="form-label" for="solicitudIdentificacionNumero">Número identificación</label>
+              <label class="form-label" for="solicitudIdentificacionNumero" id="solicitudIdentificacionNumeroLabel">Número identificación</label>
               <input type="text" id="solicitudIdentificacionNumero" name="identificacion_numero" class="form-control form-control-sm<?php echo $esCampoFaltante('identificacion_numero') ? ' is-invalid' : ''; ?>" maxlength="100" value="<?php echo $obtenerValor('identificacion_numero'); ?>"<?php echo $soloLectura ? ' readonly' : ''; ?><?php echo (!$soloLectura && $mostrarIdentificacionNumero) ? ' required' : ''; ?> data-identificacion-input="numero" data-required-when-visible="1">
             </div>
             <div class="col-6 col-sm-6 col-md-2<?php echo $mostrarIdmex ? '' : ' d-none'; ?>" data-identificacion-container="idmex" aria-hidden="<?php echo $mostrarIdmex ? 'false' : 'true'; ?>">
-              <label class="form-label" for="solicitudIdmex">IDMEX/No.Identificación</label>
+              <label class="form-label" for="solicitudIdmex" id="solicitudIdmexLabel">IDMEX/No.Identificación</label>
               <input type="text" id="solicitudIdmex" name="idmex" class="form-control form-control-sm<?php echo $esCampoFaltante('idmex') ? ' is-invalid' : ''; ?>" maxlength="50" value="<?php echo $obtenerValor('idmex'); ?>"<?php echo $soloLectura ? ' readonly' : ''; ?><?php echo (!$soloLectura && $mostrarIdmex) ? ' required' : ''; ?> data-identificacion-input="idmex" data-required-when-visible="1" oninput="this.value = this.value.toUpperCase();">
             </div>
             <div class="col-md-3">

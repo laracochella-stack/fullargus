@@ -6662,7 +6662,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === Teléfonos con intl-tel-input (configuración global) ===
     (function initTelefonosInternacionales() {
-        const telInputs = document.querySelectorAll('input[type="tel"]');
+        const telInputs = document.querySelectorAll('input[type="tel"][data-intl-hidden]');
         if (telInputs.length === 0) {
             return;
         }
