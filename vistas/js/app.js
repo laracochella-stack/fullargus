@@ -3148,6 +3148,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return resultado;
     };
 
+    const hasParamUpdates = (updates) => {
+        if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+            return false;
+        }
+        return Object.keys(updates).length > 0;
+    };
+
     const obtenerCsrfToken = () => {
         const sanitize = (value) => {
             if (typeof value !== 'string') {
@@ -3288,11 +3295,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!state || !state.instance) {
                         return null;
                     }
-                    if (updates && typeof updates === 'object') {
+                    if (hasParamUpdates(updates)) {
                         this.updateParams(state.element, updates);
                     }
                     state.instance.ajax.reload(null, resetPaging);
                     return state.instance;
+                },
+                reloadAll(updates, resetPaging = true) {
+                    const shouldUpdateParams = hasParamUpdates(updates);
+                    registry.forEach((state, element) => {
+                        if (!state || !state.instance) {
+                            return;
+                        }
+                        if (shouldUpdateParams) {
+                            this.updateParams(element, updates);
+                        }
+                        state.instance.ajax.reload(null, resetPaging);
+                    });
+                    return registry.size;
+                },
+                forEach(callback) {
+                    if (typeof callback !== 'function') {
+                        return;
+                    }
+                    registry.forEach((state, element) => {
+                        callback(state.instance || null, state, element);
+                    });
                 },
                 list() {
                     return Array.from(registry.values()).map((state) => state.instance).filter(Boolean);
@@ -3857,20 +3885,53 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.addEventListener('ag:datatable:reload', (event) => {
-        const detalle = event && typeof event.detail === 'object' ? event.detail : {};
-        const destino = detalle.target || detalle.selector || detalle.element;
-        if (!destino) {
-            return;
-        }
-
+        const detail = event && typeof event.detail === 'object' ? event.detail : {};
         const manager = getDataTableManager();
         if (!manager || typeof manager.reload !== 'function') {
             return;
         }
 
-        const params = detalle.params || detalle.extraParams || {};
-        const resetPaging = typeof detalle.resetPaging === 'boolean' ? detalle.resetPaging : true;
-        manager.reload(destino, params, resetPaging);
+        const paramUpdates = detail.params || detail.extraParams || null;
+        const resetPaging = typeof detail.resetPaging === 'boolean' ? detail.resetPaging : true;
+
+        const targets = [];
+        if (Array.isArray(detail.targets)) {
+            targets.push(...detail.targets);
+        }
+        if (Array.isArray(detail.elements)) {
+            targets.push(...detail.elements);
+        }
+        if (detail.target) {
+            targets.push(detail.target);
+        }
+        if (detail.selector) {
+            targets.push(detail.selector);
+        }
+        if (detail.element) {
+            targets.push(detail.element);
+        }
+
+        const wantsGlobalReload = detail.all === true
+            || detail.global === true
+            || targets.some((target) => typeof target === 'string' && target.toLowerCase() === 'all');
+
+        if (wantsGlobalReload || targets.length === 0) {
+            if (typeof manager.reloadAll === 'function') {
+                manager.reloadAll(paramUpdates, resetPaging);
+                return;
+            }
+            manager.list().forEach((instance) => {
+                if (instance && instance.ajax && typeof instance.ajax.reload === 'function') {
+                    instance.ajax.reload(null, resetPaging);
+                }
+            });
+            return;
+        }
+
+        const uniqueTargets = new Set(targets.filter((target) => target && target !== 'all'));
+        uniqueTargets.forEach((target) => {
+            manager.reload(target, paramUpdates, resetPaging);
+        });
     });
 
     const tablaSolicitudes = document.getElementById('tablaSolicitudes');
@@ -6046,6 +6107,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 document.dispatchEvent(new CustomEvent('ag:parametros:reload', { detail: { table: state.table } }));
+                document.dispatchEvent(new CustomEvent('ag:datatable:reload', {
+                    detail: {
+                        all: true,
+                        params: null,
+                        resetPaging: false,
+                        source: 'editable-table-save'
+                    }
+                }));
             } catch (error) {
                 console.error('Error al guardar parámetros', error);
                 state.saving = false;
