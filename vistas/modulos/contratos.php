@@ -139,6 +139,31 @@ if ($alertasSwal) {
 }
 require_once 'vistas/partials/content_header.php';
 $permisoActual = $_SESSION['permission'] ?? '';
+$puedeConfigurarContratos = in_array(strtolower((string)$permisoActual), ['senior','owner','admin'], true);
+$accionesEncabezado = [];
+if ($puedeConfigurarContratos) {
+    $accionesEncabezado[] = [
+        'type' => 'dropdown',
+        'label' => 'Configuración',
+        'icon' => 'fas fa-sliders-h',
+        'class' => 'btn-outline-secondary',
+        'items' => [
+            [
+                'label' => 'Tipos de contrato',
+                'url' => 'index.php?ruta=contratosConfiguracion#parametros-tipos-contrato',
+                'icon' => 'fas fa-list-check',
+            ],
+            [
+                'type' => 'divider',
+            ],
+            [
+                'label' => 'Plantillas de contrato',
+                'url' => 'index.php?ruta=contratosConfiguracion#parametros-plantillas-contrato',
+                'icon' => 'far fa-copy',
+            ],
+        ],
+    ];
+}
 ag_render_content_header([
     'title' => 'Contratos',
     'breadcrumbs' => [
@@ -147,6 +172,7 @@ ag_render_content_header([
     ],
     'app' => AppNavigation::APP_CONTRATOS,
     'route' => 'contratos',
+    'actions' => $accionesEncabezado,
 ]);
 ?>
 <section class="content">

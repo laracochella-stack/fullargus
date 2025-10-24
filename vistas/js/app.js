@@ -4885,7 +4885,8 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('submit', (event) => {
             event.preventDefault();
             const formData = new FormData(form);
-            fetch('index.php?ruta=parametros', {
+            const endpoint = (form.getAttribute('action') || 'index.php?ruta=parametros').trim() || 'index.php?ruta=parametros';
+            fetch(endpoint, {
                 method: 'POST',
                 body: formData
             })
@@ -4950,7 +4951,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 const formData = new FormData(formEditarVariable);
-                fetch('index.php?ruta=parametros', {
+                const endpoint = (formEditarVariable.getAttribute('action') || 'index.php?ruta=parametros').trim() || 'index.php?ruta=parametros';
+                fetch(endpoint, {
                     method: 'POST',
                     body: formData
                 })
@@ -4972,7 +4974,8 @@ document.addEventListener('DOMContentLoaded', () => {
         formSubirPlantilla.addEventListener('submit', (event) => {
             event.preventDefault();
             const formData = new FormData(formSubirPlantilla);
-            fetch('index.php?ruta=parametros', {
+            const endpoint = (formSubirPlantilla.getAttribute('action') || 'index.php?ruta=parametros').trim() || 'index.php?ruta=parametros';
+            fetch(endpoint, {
                 method: 'POST',
                 body: formData
             })
@@ -5020,7 +5023,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 const formData = new FormData(formEditarPlantilla);
-                fetch('index.php?ruta=parametros', {
+                const endpoint = (formEditarPlantilla.getAttribute('action') || 'index.php?ruta=parametros').trim() || 'index.php?ruta=parametros';
+                fetch(endpoint, {
                     method: 'POST',
                     body: formData
                 })
@@ -5072,7 +5076,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 const formData = new FormData(formEditarPlantillaSolicitud);
-                fetch('index.php?ruta=parametros', {
+                const endpoint = (formEditarPlantillaSolicitud.getAttribute('action') || 'index.php?ruta=parametros').trim() || 'index.php?ruta=parametros';
+                fetch(endpoint, {
                     method: 'POST',
                     body: formData
                 })
