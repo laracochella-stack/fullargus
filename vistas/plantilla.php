@@ -175,7 +175,7 @@ if ($sesionActiva) {
     // Determinar la ruta solicitada
     if (isset($_GET['ruta'])) {
         $ruta = $_GET['ruta'];
-        $permitidas = ['inicio','clientes','contratos','desarrollos','roles','parametros','crearContrato','solicitudes','nuevaSolicitud','perfil','salir','consola'];
+        $permitidas = ['inicio','clientes','contratos','desarrollos','roles','parametros','clientesConfiguracion','contratosConfiguracion','solicitudesConfiguracion','crearContrato','solicitudes','nuevaSolicitud','perfil','salir','consola'];
         if (in_array($ruta, $permitidas)) {
             include 'modulos/' . $ruta . '.php';
         } else {

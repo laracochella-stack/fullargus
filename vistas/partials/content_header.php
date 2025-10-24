@@ -126,19 +126,69 @@ if (!function_exists('ag_render_content_header')) {
         echo '</div>';
         echo '<div class="col-sm-5 text-sm-end mt-3 mt-sm-0">';
         if ($actions) {
-            echo '<div class="btn-group" role="group" aria-label="Acciones del módulo">';
+            static $dropdownIndex = 0;
+            echo '<div class="d-inline-flex flex-wrap gap-2 justify-content-end">';
             foreach ($actions as $action) {
-                $label = htmlspecialchars($action['label'] ?? '', ENT_QUOTES);
-                $url = htmlspecialchars($action['url'] ?? '#', ENT_QUOTES);
-                $class = 'btn btn-sm ' . htmlspecialchars($action['class'] ?? 'btn-primary', ENT_QUOTES);
+                if (empty($action)) {
+                    continue;
+                }
+                $type = isset($action['type']) ? strtolower((string)$action['type']) : 'link';
+                $label = htmlspecialchars((string)($action['label'] ?? ''), ENT_QUOTES);
                 $icon = trim((string)($action['icon'] ?? ''));
+                $iconHtml = $icon !== '' ? '<i class="' . htmlspecialchars($icon, ENT_QUOTES) . ' me-1"></i>' : '';
+
+                if ($type === 'dropdown') {
+                    $items = [];
+                    if (!empty($action['items']) && is_array($action['items'])) {
+                        $items = $action['items'];
+                    }
+                    if (!$items) {
+                        continue;
+                    }
+                    $dropdownIndex++;
+                    $toggleId = 'agHeaderActionDropdown' . $dropdownIndex;
+                    $buttonClass = 'btn btn-sm ' . htmlspecialchars((string)($action['class'] ?? 'btn-outline-secondary'), ENT_QUOTES);
+                    echo '<div class="btn-group">';
+                    echo '<button type="button" class="' . $buttonClass . ' dropdown-toggle" id="' . htmlspecialchars($toggleId, ENT_QUOTES) . '" data-bs-toggle="dropdown" aria-expanded="false">' . $iconHtml . $label . '</button>';
+                    echo '<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="' . htmlspecialchars($toggleId, ENT_QUOTES) . '">';
+                    foreach ($items as $item) {
+                        if (isset($item['type']) && strtolower((string)$item['type']) === 'divider') {
+                            echo '<li><hr class="dropdown-divider"></li>';
+                            continue;
+                        }
+                        $itemLabel = htmlspecialchars((string)($item['label'] ?? ''), ENT_QUOTES);
+                        if ($itemLabel === '') {
+                            continue;
+                        }
+                        $itemUrl = isset($item['url']) ? (string)$item['url'] : '#';
+                        $itemUrl = htmlspecialchars($itemUrl, ENT_QUOTES);
+                        $itemIcon = trim((string)($item['icon'] ?? ''));
+                        $itemIconHtml = $itemIcon !== '' ? '<i class="' . htmlspecialchars($itemIcon, ENT_QUOTES) . ' me-2"></i>' : '';
+                        $itemClass = 'dropdown-item';
+                        if (!empty($item['class'])) {
+                            $itemClass .= ' ' . trim((string)$item['class']);
+                        }
+                        $itemAttrs = '';
+                        if (!empty($item['attributes']) && is_array($item['attributes'])) {
+                            foreach ($item['attributes'] as $attrName => $attrValue) {
+                                $itemAttrs .= ' ' . htmlspecialchars((string)$attrName, ENT_QUOTES) . '="' . htmlspecialchars((string)$attrValue, ENT_QUOTES) . '"';
+                            }
+                        }
+                        echo '<li><a class="' . htmlspecialchars($itemClass, ENT_QUOTES) . '" href="' . $itemUrl . '"' . $itemAttrs . '>' . $itemIconHtml . $itemLabel . '</a></li>';
+                    }
+                    echo '</ul>';
+                    echo '</div>';
+                    continue;
+                }
+
+                $url = htmlspecialchars((string)($action['url'] ?? '#'), ENT_QUOTES);
+                $class = 'btn btn-sm ' . htmlspecialchars((string)($action['class'] ?? 'btn-primary'), ENT_QUOTES);
                 $attrs = '';
                 if (!empty($action['attributes']) && is_array($action['attributes'])) {
                     foreach ($action['attributes'] as $attrName => $attrValue) {
-                        $attrs .= ' ' . htmlspecialchars($attrName, ENT_QUOTES) . '="' . htmlspecialchars($attrValue, ENT_QUOTES) . '"';
+                        $attrs .= ' ' . htmlspecialchars((string)$attrName, ENT_QUOTES) . '="' . htmlspecialchars((string)$attrValue, ENT_QUOTES) . '"';
                     }
                 }
-                $iconHtml = $icon !== '' ? '<i class="' . htmlspecialchars($icon, ENT_QUOTES) . ' me-1"></i>' : '';
                 echo '<a class="' . $class . '" href="' . $url . '"' . $attrs . '>' . $iconHtml . $label . '</a>';
             }
             echo '</div>';

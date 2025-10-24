@@ -88,6 +88,13 @@ final class AppNavigation
                         'icon' => 'fas fa-paper-plane',
                         'visible' => true,
                     ],
+                    [
+                        'label' => 'Configurar plantillas',
+                        'route' => 'solicitudesConfiguracion',
+                        'icon' => 'fas fa-sliders-h',
+                        'visible' => $canParametros,
+                        'fragment' => 'parametros-plantillas-solicitud',
+                    ],
                 ],
                 'nav_peers' => [
                     self::APP_SOLICITUDES,
@@ -119,6 +126,20 @@ final class AppNavigation
                         'icon' => 'fas fa-pen-to-square',
                         'visible' => $canContratos,
                     ],
+                    [
+                        'label' => 'Configurar tipos',
+                        'route' => 'contratosConfiguracion',
+                        'icon' => 'fas fa-list-check',
+                        'visible' => $canParametros,
+                        'fragment' => 'parametros-tipos-contrato',
+                    ],
+                    [
+                        'label' => 'Plantillas de contrato',
+                        'route' => 'contratosConfiguracion',
+                        'icon' => 'far fa-copy',
+                        'visible' => $canParametros,
+                        'fragment' => 'parametros-plantillas-contrato',
+                    ],
                 ],
                 'nav_peers' => [
                     self::APP_CONTRATOS,
@@ -143,6 +164,13 @@ final class AppNavigation
                         'route' => 'clientes',
                         'icon' => 'fas fa-address-book',
                         'visible' => $canClientes,
+                    ],
+                    [
+                        'label' => 'Configurar nacionalidades',
+                        'route' => 'clientesConfiguracion',
+                        'icon' => 'fas fa-flag',
+                        'visible' => $canParametros,
+                        'fragment' => 'parametros-nacionalidades',
                     ],
                 ],
                 'nav_peers' => [
@@ -291,9 +319,14 @@ final class AppNavigation
             $children = [];
             foreach ($module['children'] as $child) {
                 $childRoute = $child['route'] ?? null;
+                $childUrl = self::buildUrl($childRoute);
+                $fragment = isset($child['fragment']) ? trim((string)$child['fragment']) : '';
+                if ($fragment !== '') {
+                    $childUrl .= '#' . rawurlencode($fragment);
+                }
                 $children[] = [
                     'label' => $child['label'],
-                    'url' => self::buildUrl($childRoute),
+                    'url' => $childUrl,
                     'icon' => $child['icon'] ?? '',
                     'active' => $currentRoute !== null && $childRoute === $currentRoute,
                 ];

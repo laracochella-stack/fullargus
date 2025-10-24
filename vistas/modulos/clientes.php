@@ -56,11 +56,29 @@ if (!in_array($permisoClientes, ['moderator','senior','owner','admin'], true)) {
     return;
 }
 
+$puedeConfigurarClientes = in_array(strtolower((string)$permisoClientes), ['senior','owner','admin'], true);
+
 $accionesMenuId = uniqid('agClientesAccionesMenu');
 $accionesToggleId = $accionesMenuId . 'Toggle';
 
 
 require_once 'vistas/partials/content_header.php';
+$accionesEncabezado = [];
+if ($puedeConfigurarClientes) {
+    $accionesEncabezado[] = [
+        'type' => 'dropdown',
+        'label' => 'Configuración',
+        'icon' => 'fas fa-sliders-h',
+        'class' => 'btn-outline-secondary',
+        'items' => [
+            [
+                'label' => 'Nacionalidades',
+                'url' => 'index.php?ruta=clientesConfiguracion#parametros-nacionalidades',
+                'icon' => 'fas fa-flag',
+            ],
+        ],
+    ];
+}
 ag_render_content_header([
     'title' => 'Clientes',
     'breadcrumbs' => [
@@ -69,6 +87,7 @@ ag_render_content_header([
     ],
     'app' => AppNavigation::APP_CLIENTES,
     'route' => 'clientes',
+    'actions' => $accionesEncabezado,
 ]);
 ?>
 

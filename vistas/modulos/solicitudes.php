@@ -5,6 +5,7 @@ use App\Support\AppNavigation;
 $mensajeEstado = ControladorSolicitudes::ctrCambiarEstado();
 $permisoSolicitudes = strtolower(trim((string)($_SESSION['permission'] ?? 'user')));
 $esGestorSolicitudes = in_array($permisoSolicitudes, ['moderator','senior','owner','admin'], true);
+$puedeConfigurarSolicitudes = in_array($permisoSolicitudes, ['senior','owner','admin'], true);
 $verCanceladas = $esGestorSolicitudes
     && isset($_GET['verCanceladas'])
     && $_GET['verCanceladas'] === '1';
@@ -156,6 +157,22 @@ $estadoColores = [
 ?>
 <?php
 require_once 'vistas/partials/content_header.php';
+$accionesEncabezado = [];
+if ($puedeConfigurarSolicitudes) {
+    $accionesEncabezado[] = [
+        'type' => 'dropdown',
+        'label' => 'Configuración',
+        'icon' => 'fas fa-sliders-h',
+        'class' => 'btn-outline-secondary',
+        'items' => [
+            [
+                'label' => 'Plantillas de solicitud',
+                'url' => 'index.php?ruta=solicitudesConfiguracion#parametros-plantillas-solicitud',
+                'icon' => 'far fa-copy',
+            ],
+        ],
+    ];
+}
 ag_render_content_header([
     'title' => 'Solicitudes',
     'breadcrumbs' => [
@@ -164,6 +181,7 @@ ag_render_content_header([
     ],
     'app' => AppNavigation::APP_SOLICITUDES,
     'route' => 'solicitudes',
+    'actions' => $accionesEncabezado,
 ]);
 ?>
 <section class="content">
