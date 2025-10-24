@@ -415,7 +415,7 @@ if ($solicitudActual) {
             'type' => 'link',
             'label' => 'Ver contrato vinculado',
             'icon' => 'fas fa-file-contract',
-            'url' => sprintf('index.php?ruta=crearContrato&contrato_id=%d&ver=1', (int)$solicitudActual['contrato_id']),
+            'url' => sprintf('index.php?ruta=crearContrato&contrato_id=%d', (int)$solicitudActual['contrato_id']),
         ];
     }
 
