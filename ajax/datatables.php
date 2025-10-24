@@ -441,6 +441,9 @@ switch ($resource) {
             'data-email' => $email,
             'data-beneficiario' => $escape($cliente['beneficiario'] ?? ''),
             'data-estado' => $estadoSeguro,
+            'data-view-trigger' => '.btnVerCliente',
+            'data-view-handler' => 'cliente',
+            'data-view-modal' => '#modalVerCliente',
         ];
 
         $attrString = $buildAttrString($rowAttrs);
@@ -490,7 +493,17 @@ switch ($resource) {
             $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 3]);
 
+        $checkboxId = sprintf('agSeleccionCliente%d', $id);
+        $checkbox = sprintf(
+            '<div class="form-check d-flex justify-content-center mb-0">'
+            . '<input type="checkbox" class="form-check-input ag-row-selector" id="%1$s" aria-label="Seleccionar cliente %2$s">'
+            . '</div>',
+            $escape($checkboxId),
+            $nombre !== '' ? $nombre : (string)$id
+        );
+
         $data[] = [
+            'seleccion' => $checkbox,
             'id' => (string)$id,
             'nombre' => $nombreLink,
             'email' => $email,
@@ -986,6 +999,7 @@ switch ($resource) {
                 'data-contrato-id' => (string)$id,
                 'data-estatus' => (string)$estatusValor,
                 'data-contrato' => $jsonContrato !== false ? $jsonContrato : '{}',
+                'data-view-url' => $escape(sprintf('index.php?ruta=crearContrato&contrato_id=%d&ver=1', $id)),
             ];
 
             $data[] = [
@@ -1066,6 +1080,7 @@ switch ($resource) {
 
         $data = [];
         foreach ($solicitudes as $solicitud) {
+            $solicitudId = (int)($solicitud['id'] ?? 0);
             $estado = (string)($solicitud['estado'] ?? 'borrador');
             $badge = $estadoColores[$estado] ?? 'secondary';
             $contratoId = (int)($solicitud['contrato_id'] ?? 0);
@@ -1087,14 +1102,15 @@ switch ($resource) {
                 : '<span class="text-muted">—</span>';
 
             $accionesPartes = [];
-            $accionesPartes[] = sprintf('<a href="index.php?ruta=nuevaSolicitud&amp;id=%1$d&amp;modo=ver" class="btn btn-info btn-sm" title="Ver solicitud"><i class="fas fa-eye"></i></a>', (int)($solicitud['id'] ?? 0));
+            $urlVerSolicitud = sprintf('index.php?ruta=nuevaSolicitud&id=%d&modo=ver', $solicitudId);
+            $accionesPartes[] = sprintf('<a href="%1$s" class="btn btn-info btn-sm" title="Ver solicitud"><i class="fas fa-eye"></i></a>', $escape($urlVerSolicitud));
 
             if ($tieneContrato && $contratoId > 0) {
                 $accionesPartes[] = sprintf('<a href="index.php?ruta=crearContrato&amp;contrato_id=%1$d" class="btn btn-outline-dark btn-sm" title="Ver contrato vinculado"><i class="fas fa-file-contract"></i></a>', $contratoId);
             }
 
             if ($esGestor) {
-                $accionesPartes[] = sprintf('<button type="button" class="btn btn-outline-info btn-sm btnVerPlaceholdersSolicitud" data-solicitud-id="%1$d" title="Ver placeholders disponibles"><i class="fas fa-tags"></i></button>', (int)($solicitud['id'] ?? 0));
+                        $accionesPartes[] = sprintf('<button type="button" class="btn btn-outline-info btn-sm btnVerPlaceholdersSolicitud" data-solicitud-id="%1$d" title="Ver placeholders disponibles"><i class="fas fa-tags"></i></button>', $solicitudId);
                 if ($estado === 'aprobada') {
                     $accionesPartes[] = sprintf('<button type="button" class="btn btn-outline-primary btn-sm btnGenerarSolicitudDocx" data-solicitud-id="%1$d" data-csrf="%2$s" title="Generar solicitud en Word"><i class="fas fa-file-word"></i></button>', (int)($solicitud['id'] ?? 0), $escape($csrfToken));
                 }
@@ -1212,12 +1228,25 @@ switch ($resource) {
             $acciones = $renderActionButtons($accionesPartes, ['primary' => 3]);
 
             $rowAttrs = [
+                'data-id' => (string)$solicitudId,
                 'data-estado' => $escape($estado),
                 'data-contrato-id' => (string)$contratoId,
                 'data-has-contrato' => $tieneContrato ? '1' : '0',
+                'data-view-url' => $escape($urlVerSolicitud),
             ];
 
+            $checkboxId = sprintf('agSeleccionSolicitud%d', $solicitudId);
+            $folioTexto = trim((string)($solicitud['folio'] ?? ''));
+            $checkbox = sprintf(
+                '<div class="form-check d-flex justify-content-center mb-0">'
+                . '<input type="checkbox" class="form-check-input ag-row-selector" id="%1$s" aria-label="Seleccionar solicitud %2$s">'
+                . '</div>',
+                $escape($checkboxId),
+                $folioTexto !== '' ? $escape($folioTexto) : (string)$solicitudId
+            );
+
             $data[] = [
+                'seleccion' => $checkbox,
                 'folio' => $escape($solicitud['folio'] ?? ''),
                 'nombre' => $escape($solicitud['nombre_completo'] ?? ''),
                 'estado' => sprintf('<span class="badge bg-%1$s text-uppercase">%2$s</span>', $badge, $escape(str_replace('_', ' ', $estado))),

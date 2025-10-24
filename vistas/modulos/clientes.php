@@ -294,6 +294,7 @@ ag_render_content_header([
           <thead>
             <tr>
               <th scope="col" class="control" data-priority="1"></th>
+              <th scope="col" class="min-desktop no-sort text-center">Sel.</th>
               <th scope="col" class="min-tablet-l">ID</th>
               <th scope="col" class="all">Nombre</th>
               <th scope="col" class="min-tablet">Email</th>

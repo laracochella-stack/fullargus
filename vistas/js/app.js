@@ -664,6 +664,84 @@ function agUpdateToolbarDisplay(manager, rowData) {
     manager.currentRowData = rowData;
 }
 
+function agOpenRowDefaultView(manager, rowElement, rowData) {
+    if (!rowElement) {
+        return false;
+    }
+
+    const triggerSelector = rowElement.getAttribute('data-view-trigger')
+        || (rowData && typeof rowData === 'object' && rowData.view_trigger ? rowData.view_trigger : '');
+
+    if (triggerSelector) {
+        const contexts = [];
+        if (rowElement) {
+            contexts.push(rowElement);
+        }
+        if (manager && manager.menu) {
+            contexts.push(manager.menu);
+        }
+
+        for (const context of contexts) {
+            if (!context || typeof context.querySelector !== 'function') {
+                continue;
+            }
+
+            let trigger = null;
+            try {
+                trigger = context.querySelector(triggerSelector);
+            } catch (error) {
+                console.warn('No fue posible localizar el disparador de vista solicitado.', error);
+            }
+
+            if (!trigger) {
+                continue;
+            }
+
+            if (trigger instanceof HTMLAnchorElement && trigger.href) {
+                trigger.click();
+                return true;
+            }
+
+            if (typeof trigger.click === 'function') {
+                trigger.click();
+                return true;
+            }
+        }
+    }
+
+    const handlerName = rowElement.getAttribute('data-view-handler')
+        || (rowData && typeof rowData === 'object' && rowData.view_handler ? rowData.view_handler : '');
+    if (handlerName === 'cliente' && typeof llenarModalVerCliente === 'function') {
+        llenarModalVerCliente(rowElement);
+        const modalSelector = rowElement.getAttribute('data-view-modal')
+            || (rowData && typeof rowData === 'object' && rowData.view_modal ? rowData.view_modal : '#modalVerCliente');
+        if (modalSelector) {
+            const modalElement = document.querySelector(modalSelector);
+            if (modalElement) {
+                if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function') {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                } else {
+                    modalElement.classList.add('show');
+                    modalElement.removeAttribute('aria-hidden');
+                }
+            }
+        }
+        return true;
+    }
+
+    const viewUrlAttr = rowElement.getAttribute('data-view-url')
+        || (rowData && typeof rowData === 'object' && rowData.view_url ? rowData.view_url : '');
+    if (viewUrlAttr) {
+        const url = typeof decodeHtml === 'function' ? decodeHtml(viewUrlAttr) : viewUrlAttr;
+        if (url) {
+            window.location.href = url;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function agResetToolbar(manager) {
     if (!manager) {
         return;
@@ -672,6 +750,28 @@ function agResetToolbar(manager) {
     manager.currentRowKey = '';
     manager.currentRowData = null;
     agUpdateToolbarDisplay(manager, null);
+
+    let tableElement = manager.tableElement;
+    if (!tableElement && manager.instance && typeof manager.instance.table === 'function') {
+        try {
+            const tableApi = manager.instance.table();
+            if (tableApi && typeof tableApi.node === 'function') {
+                tableElement = tableApi.node();
+            }
+        } catch (error) {
+            tableElement = null;
+        }
+    }
+
+    if (tableElement) {
+        tableElement.querySelectorAll('tbody tr.ag-row-selected').forEach((tr) => tr.classList.remove('ag-row-selected'));
+        tableElement.querySelectorAll('tbody .ag-row-selector').forEach((input) => {
+            if (input instanceof HTMLInputElement) {
+                input.checked = false;
+                input.indeterminate = false;
+            }
+        });
+    }
 }
 
 function agHandleRowSelection(manager, instance, rowElement, rowData) {
@@ -679,13 +779,33 @@ function agHandleRowSelection(manager, instance, rowElement, rowData) {
         return;
     }
 
-    const table = rowElement.closest('table');
-    if (table) {
-        table.querySelectorAll('tbody tr.ag-row-selected').forEach((tr) => {
+    const tableElement = manager.tableElement || rowElement.closest('table');
+    if (!manager.tableElement && tableElement) {
+        manager.tableElement = tableElement;
+    }
+
+    if (tableElement) {
+        tableElement.querySelectorAll('tbody tr.ag-row-selected').forEach((tr) => {
             if (tr !== rowElement) {
                 tr.classList.remove('ag-row-selected');
             }
         });
+
+        tableElement.querySelectorAll('tbody .ag-row-selector').forEach((input) => {
+            if (!(input instanceof HTMLInputElement)) {
+                return;
+            }
+            if (rowElement.contains(input)) {
+                return;
+            }
+            input.checked = false;
+            input.indeterminate = false;
+        });
+    }
+
+    const selectorInput = rowElement.querySelector('.ag-row-selector');
+    if (selectorInput instanceof HTMLInputElement) {
+        selectorInput.checked = true;
     }
 
     rowElement.classList.add('ag-row-selected');
@@ -693,6 +813,8 @@ function agHandleRowSelection(manager, instance, rowElement, rowData) {
     if (manager.recordKeyField) {
         const keyValor = agGetRowValue(rowData, manager.recordKeyField);
         manager.currentRowKey = keyValor || '';
+    } else {
+        manager.currentRowKey = '';
     }
 
     agUpdateToolbarDisplay(manager, rowData);
@@ -704,6 +826,7 @@ function agInitializeTableInteractions(manager, instance, tableElement) {
     }
 
     manager.instance = instance;
+    manager.tableElement = tableElement;
 
     if (manager.lengthContainer && !manager.lengthBound) {
         const wrapper = tableElement.closest('.dataTables_wrapper');
@@ -756,6 +879,10 @@ function agInitializeTableInteractions(manager, instance, tableElement) {
                                 });
                             }
                             node.classList.add('ag-row-selected');
+                            const restoredSelector = node.querySelector('.ag-row-selector');
+                            if (restoredSelector instanceof HTMLInputElement) {
+                                restoredSelector.checked = true;
+                            }
                             agUpdateToolbarDisplay(manager, data);
                             restored = true;
                         }
@@ -839,6 +966,31 @@ function agInitializeTableInteractions(manager, instance, tableElement) {
 
             const data = row.data();
             if (!data) {
+                return;
+            }
+
+            const selectorInput = event.target.closest('.ag-row-selector');
+            const isInteractive = Boolean(event.target.closest('a, button, input, label, select, textarea'));
+
+            if (selectorInput instanceof HTMLInputElement) {
+                event.stopPropagation();
+                if (selectorInput.checked) {
+                    agHandleRowSelection(manager, manager.instance, rowElement, data);
+                } else {
+                    rowElement.classList.remove('ag-row-selected');
+                    agResetToolbar(manager);
+                }
+                return;
+            }
+
+            if (rowElement.classList.contains('ag-row-selected')) {
+                if (!isInteractive) {
+                    agOpenRowDefaultView(manager, rowElement, data);
+                }
+                return;
+            }
+
+            if (isInteractive) {
                 return;
             }
 
@@ -3199,6 +3351,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 resource: 'clientes',
                 columns: [
                     { data: null, defaultContent: '', className: 'dtr-control dt-control', orderable: false, searchable: false, responsivePriority: 1 },
+                    { data: 'seleccion', orderable: false, searchable: false, className: 'text-center', responsivePriority: 1 },
                     { data: 'id', className: 'text-nowrap', responsivePriority: 2 },
                     { data: 'nombre', responsivePriority: 1 },
                     { data: 'email', responsivePriority: 3 },
@@ -3266,6 +3419,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 resource: 'solicitudes',
                 columns: [
                     { data: null, defaultContent: '', className: 'dtr-control dt-control', orderable: false, searchable: false, responsivePriority: 1 },
+                    { data: 'seleccion', orderable: false, searchable: false, className: 'text-center', responsivePriority: 2 },
                     { data: 'folio', responsivePriority: 3 },
                     { data: 'nombre', responsivePriority: 1 },
                     { data: 'estado', responsivePriority: 2 },
