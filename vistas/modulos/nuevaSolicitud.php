@@ -721,15 +721,25 @@ ag_render_record_toolbar([
               'hintId' => 'solicitudCelularHint',
               'required' => true,
             ]); ?>
-            <?php echo $renderTelefonoSolicitud([
-              'col' => 'col-12 col-sm-6 col-md-2',
-              'id' => 'solicitudTelefono',
-              'name' => 'telefono',
-              'hiddenId' => 'solicitudTelefonoHidden',
-              'label' => 'Teléfono principal',
-              'value' => $obtenerValorCrudo('telefono'),
-              'hintId' => 'solicitudTelefonoHint',
-            ]); ?>
+            <?php
+            $telefonoFijoValor = preg_replace('/\D+/', '', $obtenerValorCrudo('telefono'));
+            ?>
+            <div class="col-12 col-sm-6 col-md-2">
+              <label class="form-label" for="solicitudTelefono">Teléfono principal</label>
+              <input
+                type="tel"
+                id="solicitudTelefono"
+                name="telefono"
+                class="form-control form-control-sm<?php echo $esCampoFaltante('telefono') ? ' is-invalid' : ''; ?>"
+                value="<?php echo htmlspecialchars($telefonoFijoValor, ENT_QUOTES); ?>"
+                inputmode="numeric"
+                pattern="\d+"
+                maxlength="15"
+                aria-describedby="solicitudTelefonoHint"
+                <?php echo $soloLectura ? ' readonly' : ''; ?><?php echo $enforceRequired ? ' required' : ''; ?>>
+              <div class="invalid-feedback">Ingrese un número válido.</div>
+              <div id="solicitudTelefonoHint" class="form-text ag-field-hint" aria-hidden="true">Ingresa únicamente dígitos para el teléfono fijo.</div>
+            </div>
             <div class="col-md-3">
               <label class="form-label">Correo electrónico</label>
               <input type="email" name="email" class="form-control form-control-sm<?php echo $esCampoFaltante('email') ? ' is-invalid' : ''; ?>" value="<?php echo $obtenerValor('email'); ?>"<?php echo $soloLectura ? ' readonly' : ''; ?><?php echo $enforceRequired ? ' required' : ''; ?>>
