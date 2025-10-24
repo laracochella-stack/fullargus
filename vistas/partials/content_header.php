@@ -49,6 +49,79 @@ if (!function_exists('ag_render_content_header')) {
             $appNavigation = [];
         }
 
+        if (!is_array($actions)) {
+            $actions = [];
+        }
+
+        $autoConfigActions = array_key_exists('auto_config_actions', $config)
+            ? (bool)$config['auto_config_actions']
+            : true;
+
+        if ($autoConfigActions && $currentApp !== '') {
+            $hasConfigAction = false;
+            foreach ($actions as $action) {
+                $actionType = isset($action['type']) ? strtolower((string)$action['type']) : 'link';
+                $actionLabel = isset($action['label']) ? strtolower(trim((string)$action['label'])) : '';
+                if ($actionType === 'dropdown' && $actionLabel === 'configuración') {
+                    $hasConfigAction = true;
+                    break;
+                }
+            }
+
+            if (!$hasConfigAction) {
+                $sessionData = $_SESSION ?? [];
+                if (!is_array($sessionData)) {
+                    $sessionData = [];
+                }
+
+                try {
+                    $configMenuItems = \App\Support\AppNavigation::getModuleConfigurationMenu($currentApp, $sessionData, $currentRoute);
+                } catch (\Throwable $exception) {
+                    $configMenuItems = [];
+                }
+
+                if (!empty($configMenuItems)) {
+                    $dropdownItems = [];
+                    foreach ($configMenuItems as $item) {
+                        $itemLabel = isset($item['label']) ? (string)$item['label'] : '';
+                        $itemUrl = isset($item['url']) ? (string)$item['url'] : '#';
+                        if ($itemLabel === '' || $itemUrl === '') {
+                            continue;
+                        }
+
+                        $dropdownItem = [
+                            'label' => $itemLabel,
+                            'url' => $itemUrl,
+                        ];
+
+                        if (!empty($item['icon'])) {
+                            $dropdownItem['icon'] = (string)$item['icon'];
+                        }
+
+                        if (!empty($item['target'])) {
+                            $dropdownItem['attributes'] = ['target' => (string)$item['target']];
+                        }
+
+                        if (!empty($item['active'])) {
+                            $dropdownItem['class'] = 'active';
+                        }
+
+                        $dropdownItems[] = $dropdownItem;
+                    }
+
+                    if ($dropdownItems) {
+                        $actions[] = [
+                            'type' => 'dropdown',
+                            'label' => 'Configuración',
+                            'icon' => 'fas fa-sliders-h',
+                            'class' => 'btn-outline-secondary',
+                            'items' => $dropdownItems,
+                        ];
+                    }
+                }
+            }
+        }
+
         echo '<section class="content-header">';
         echo '<div class="container-fluid">';
         echo '<div class="row align-items-center">';
