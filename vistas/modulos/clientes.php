@@ -230,7 +230,7 @@ ag_render_content_header([
   <div class="container-fluid">
     <div class="card">
       <div class="card-header"><h3 class="card-title">Listado</h3></div>
-      <div class="card-body table-responsive">
+      <div class="card-body">
         <div class="ag-table-ux-bar" data-table="#tablaClientes" data-default-label="Clientes" data-record-format="Cliente {data-nombre}" data-record-key="data-id" data-empty-message="Selecciona un cliente para ver acciones disponibles.">
           <div class="ag-table-ux-section ag-table-ux-primary">
             <div class="ag-table-ux-primary">
@@ -306,20 +306,22 @@ ag_render_content_header([
           </div>
           <div class="ag-table-ux-section ag-table-ux-extra"></div>
         </div>
-        <table class="table table-striped table-hover align-middle ag-data-table" id="tablaClientes" data-dt-resource="clientes" data-dt-params='{"estado":"activos"}' data-datatable-options='{"dom":"rtip"}'>
-          <thead>
-            <tr>
-              <th scope="col" class="control" data-priority="1"></th>
-              <th scope="col" class="all no-sort text-center ag-table-column-select">Sel.</th>
-              <th scope="col" class="min-tablet-l">ID</th>
-              <th scope="col" class="all">Nombre</th>
-              <th scope="col" class="min-tablet">Email</th>
-              <th scope="col" class="min-tablet">Estado</th>
-              <th scope="col" class="d-none">Acciones</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle ag-data-table" id="tablaClientes" data-dt-resource="clientes" data-dt-params='{"estado":"activos"}' data-datatable-options='{"dom":"rtip"}'>
+            <thead>
+              <tr>
+                <th scope="col" class="control" data-priority="1"></th>
+                <th scope="col" class="all no-sort text-center ag-table-column-select">Sel.</th>
+                <th scope="col" class="min-tablet-l">ID</th>
+                <th scope="col" class="all">Nombre</th>
+                <th scope="col" class="min-tablet">Email</th>
+                <th scope="col" class="min-tablet">Estado</th>
+                <th scope="col" class="d-none">Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
