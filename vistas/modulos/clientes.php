@@ -236,32 +236,34 @@ ag_render_content_header([
         <div class="ag-table-ux-bar" data-table="#tablaClientes" data-default-label="Clientes" data-record-format="Cliente {data-nombre}" data-record-key="data-id" data-empty-message="Selecciona un cliente para ver acciones disponibles.">
           <div class="ag-table-ux-section ag-table-ux-primary">
             <div class="ag-table-ux-primary">
-              <a href="index.php?ruta=crearCuenta" class="btn btn-primary ag-table-ux-new">
-                <i class="fas fa-user-plus me-1"></i>
-                Nuevo
-              </a>
-              <div class="ag-table-ux-current">Clientes</div>
-              <div class="dropdown ag-table-ux-actions">
-                <button
-                  class="btn btn-outline-secondary ag-table-ux-gear"
-                  type="button"
-                  id="<?php echo htmlspecialchars($accionesToggleId, ENT_QUOTES); ?>"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                  aria-haspopup="true"
-                  aria-controls="<?php echo htmlspecialchars($accionesMenuId, ENT_QUOTES); ?>"
-                  aria-label="Acciones del cliente"
-                  disabled>
-                  <i class="fas fa-cog"></i>
-                </button>
-                <div
-                  class="dropdown-menu dropdown-menu-end ag-table-ux-actions-menu"
-                  id="<?php echo htmlspecialchars($accionesMenuId, ENT_QUOTES); ?>"
-                  role="menu"
-                  aria-labelledby="<?php echo htmlspecialchars($accionesToggleId, ENT_QUOTES); ?>">
-                  <div class="dropdown-item-text ag-record-empty-hint">Selecciona un cliente para ver acciones disponibles.</div>
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                <a href="index.php?ruta=crearCuenta" class="btn btn-primary ag-table-ux-new">
+                  <i class="fas fa-user-plus me-1"></i>
+                  Nuevo
+                </a>
+                <div class="dropdown ag-table-ux-actions">
+                  <button
+                    class="btn btn-outline-secondary ag-table-ux-gear"
+                    type="button"
+                    id="<?php echo htmlspecialchars($accionesToggleId, ENT_QUOTES); ?>"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    aria-haspopup="true"
+                    aria-controls="<?php echo htmlspecialchars($accionesMenuId, ENT_QUOTES); ?>"
+                    aria-label="Acciones del cliente"
+                    disabled>
+                    <i class="fas fa-cog"></i>
+                  </button>
+                  <div
+                    class="dropdown-menu dropdown-menu-end ag-table-ux-actions-menu"
+                    id="<?php echo htmlspecialchars($accionesMenuId, ENT_QUOTES); ?>"
+                    role="menu"
+                    aria-labelledby="<?php echo htmlspecialchars($accionesToggleId, ENT_QUOTES); ?>">
+                    <div class="dropdown-item-text ag-record-empty-hint">Selecciona un cliente para ver acciones disponibles.</div>
+                  </div>
                 </div>
               </div>
+              <div class="ag-table-ux-current">Clientes</div>
             </div>
           </div>
           <div class="ag-table-ux-section ag-table-ux-search">
