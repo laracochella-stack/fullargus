@@ -979,6 +979,8 @@ function agInitializeTableInteractions(manager, instance, tableElement) {
 
     if (!manager.bodyListenerBound && tableElement.tBodies[0]) {
         const tbody = tableElement.tBodies[0];
+        const editableAttr = tableElement.getAttribute('data-editable') || '';
+        const tableIsEditable = editableAttr !== '' && editableAttr !== '0' && editableAttr.toLowerCase() !== 'false';
         tbody.addEventListener('click', (event) => {
             const cell = event.target.closest('td');
             if (!cell || cell.classList.contains('dataTables_empty') || cell.classList.contains('dtr-control')) {
@@ -1034,6 +1036,9 @@ function agInitializeTableInteractions(manager, instance, tableElement) {
         });
 
         tbody.addEventListener('dblclick', (event) => {
+            if (tableIsEditable) {
+                return;
+            }
             const cell = event.target.closest('td');
             if (!cell || cell.classList.contains('dataTables_empty') || cell.classList.contains('dtr-control')) {
                 return;
