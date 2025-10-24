@@ -5204,11 +5204,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 rows: new Map(),
                 dirtyRows: new Set(),
                 saving: false,
+                lastPointerType: 'mouse',
             };
 
             tableStates.set(table, state);
 
+            if (typeof window !== 'undefined' && 'PointerEvent' in window) {
+                table.addEventListener('pointerdown', (event) => {
+                    if (event && typeof event.pointerType === 'string') {
+                        state.lastPointerType = event.pointerType;
+                    }
+                });
+            }
+
             table.addEventListener('dblclick', (event) => handleDblClick(state, event));
+
+            table.addEventListener('click', (event) => handleTapToEdit(state, event));
 
             if (typeof $ !== 'undefined') {
                 $(table).on('draw.dt', () => {
@@ -5649,6 +5660,60 @@ document.addEventListener('DOMContentLoaded', () => {
             if (meta.editor === 'file') {
                 startFileEdit(state, meta, rowState);
             }
+        };
+
+        const isCoarsePointerEnvironment = () => {
+            if (typeof window === 'undefined') {
+                return false;
+            }
+            if (window.matchMedia) {
+                try {
+                    if (window.matchMedia('(pointer: coarse)').matches) {
+                        return true;
+                    }
+                    if (window.matchMedia('(hover: none)').matches) {
+                        return true;
+                    }
+                } catch (error) {
+                    // Ignora los errores de matchMedia y continua con otras detecciones.
+                }
+            }
+            if (window.navigator && typeof window.navigator.maxTouchPoints === 'number' && window.navigator.maxTouchPoints > 0) {
+                return true;
+            }
+            return 'ontouchstart' in window;
+        };
+
+        const shouldHandleTapEdit = (state, event) => {
+            if (event && typeof event.pointerType === 'string') {
+                return event.pointerType !== 'mouse';
+            }
+            if (state && state.lastPointerType && state.lastPointerType !== 'mouse') {
+                return true;
+            }
+            if (event && typeof event.type === 'string' && event.type.indexOf('touch') === 0) {
+                return true;
+            }
+            return isCoarsePointerEnvironment();
+        };
+
+        const handleTapToEdit = (state, event) => {
+            if (!shouldHandleTapEdit(state, event)) {
+                return;
+            }
+            const target = event && event.target instanceof Element ? event.target : null;
+            if (target) {
+                if (target.closest('.ag-editable-cell-editing')) {
+                    return;
+                }
+                if (target.closest('button, a, input, select, textarea, label')) {
+                    return;
+                }
+                if (target.closest('[data-editable-action]')) {
+                    return;
+                }
+            }
+            handleDblClick(state, event);
         };
 
         const createRemoveButtonHtml = (rowKey) => (
