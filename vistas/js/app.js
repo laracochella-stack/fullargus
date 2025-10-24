@@ -400,6 +400,7 @@ function agSetupTableUxBars() {
         manager.markupInitialized = true;
         manager.currentRowKey = '';
         manager.currentRowData = null;
+        manager.selectionMode = 'none';
 
         if (manager.gearButton) {
             manager.gearButton.disabled = true;
@@ -408,6 +409,10 @@ function agSetupTableUxBars() {
 
         if (manager.menu) {
             manager.menu.innerHTML = `<div class="dropdown-item-text ag-record-empty-hint">${manager.emptyMessage}</div>`;
+        }
+
+        if (manager.bar) {
+            manager.bar.setAttribute('data-selection-mode', 'none');
         }
 
         if (manager.filterPanel) {
@@ -756,6 +761,10 @@ function agResetToolbar(manager) {
 
     manager.currentRowKey = '';
     manager.currentRowData = null;
+    manager.selectionMode = 'none';
+    if (manager.bar) {
+        manager.bar.setAttribute('data-selection-mode', 'none');
+    }
     agUpdateToolbarDisplay(manager, null);
 
     let tableElement = manager.tableElement;
@@ -771,7 +780,11 @@ function agResetToolbar(manager) {
     }
 
     if (tableElement) {
-        tableElement.querySelectorAll('tbody tr.ag-row-selected').forEach((tr) => tr.classList.remove('ag-row-selected'));
+        tableElement.querySelectorAll('tbody tr.ag-row-selected').forEach((tr) => {
+            tr.classList.remove('ag-row-selected');
+            tr.removeAttribute('data-ag-selection-mode');
+            tr.classList.remove('ag-row-quick-edit');
+        });
         tableElement.querySelectorAll('tbody .ag-row-selector').forEach((input) => {
             if (input instanceof HTMLInputElement) {
                 input.checked = false;
@@ -781,11 +794,12 @@ function agResetToolbar(manager) {
     }
 }
 
-function agHandleRowSelection(manager, instance, rowElement, rowData) {
+function agHandleRowSelection(manager, instance, rowElement, rowData, selectionMode = 'row') {
     if (!manager || !instance || !rowElement) {
         return;
     }
 
+    const normalizedMode = selectionMode === 'checkbox' ? 'checkbox' : 'row';
     const tableElement = manager.tableElement || rowElement.closest('table');
     if (!manager.tableElement && tableElement) {
         manager.tableElement = tableElement;
@@ -795,6 +809,8 @@ function agHandleRowSelection(manager, instance, rowElement, rowData) {
         tableElement.querySelectorAll('tbody tr.ag-row-selected').forEach((tr) => {
             if (tr !== rowElement) {
                 tr.classList.remove('ag-row-selected');
+                tr.removeAttribute('data-ag-selection-mode');
+                tr.classList.remove('ag-row-quick-edit');
             }
         });
 
@@ -816,12 +832,19 @@ function agHandleRowSelection(manager, instance, rowElement, rowData) {
     }
 
     rowElement.classList.add('ag-row-selected');
+    rowElement.setAttribute('data-ag-selection-mode', normalizedMode);
+    rowElement.classList.toggle('ag-row-quick-edit', normalizedMode === 'checkbox');
 
     if (manager.recordKeyField) {
         const keyValor = agGetRowValue(rowData, manager.recordKeyField);
         manager.currentRowKey = keyValor || '';
     } else {
         manager.currentRowKey = '';
+    }
+
+    manager.selectionMode = normalizedMode;
+    if (manager.bar) {
+        manager.bar.setAttribute('data-selection-mode', normalizedMode);
     }
 
     agUpdateToolbarDisplay(manager, rowData);
@@ -955,7 +978,8 @@ function agInitializeTableInteractions(manager, instance, tableElement) {
     }
 
     if (!manager.bodyListenerBound && tableElement.tBodies[0]) {
-        tableElement.tBodies[0].addEventListener('click', (event) => {
+        const tbody = tableElement.tBodies[0];
+        tbody.addEventListener('click', (event) => {
             const cell = event.target.closest('td');
             if (!cell || cell.classList.contains('dataTables_empty') || cell.classList.contains('dtr-control')) {
                 return;
@@ -977,31 +1001,74 @@ function agInitializeTableInteractions(manager, instance, tableElement) {
             }
 
             const selectorInput = event.target.closest('.ag-row-selector');
-            const isInteractive = Boolean(event.target.closest('a, button, input, label, select, textarea'));
+            const interactiveElement = event.target.closest('a, button, input, label, select, textarea');
 
             if (selectorInput instanceof HTMLInputElement) {
                 event.stopPropagation();
                 if (selectorInput.checked) {
-                    agHandleRowSelection(manager, manager.instance, rowElement, data);
+                    agHandleRowSelection(manager, manager.instance, rowElement, data, 'checkbox');
                 } else {
                     rowElement.classList.remove('ag-row-selected');
+                    rowElement.removeAttribute('data-ag-selection-mode');
+                    rowElement.classList.remove('ag-row-quick-edit');
                     agResetToolbar(manager);
                 }
                 return;
             }
 
-            if (rowElement.classList.contains('ag-row-selected')) {
-                if (!isInteractive) {
-                    agOpenRowDefaultView(manager, rowElement, data);
-                }
+            const wasSelected = rowElement.classList.contains('ag-row-selected');
+            if (!wasSelected) {
+                agHandleRowSelection(manager, manager.instance, rowElement, data, 'row');
                 return;
             }
 
-            if (isInteractive) {
+            if (interactiveElement) {
                 return;
             }
 
-            agHandleRowSelection(manager, manager.instance, rowElement, data);
+            if (manager.selectionMode === 'checkbox') {
+                return;
+            }
+
+            agOpenRowDefaultView(manager, rowElement, data);
+        });
+
+        tbody.addEventListener('dblclick', (event) => {
+            const cell = event.target.closest('td');
+            if (!cell || cell.classList.contains('dataTables_empty') || cell.classList.contains('dtr-control')) {
+                return;
+            }
+
+            if (event.target.closest('.ag-row-selector')) {
+                return;
+            }
+
+            if (event.target.closest('button, input, label, select, textarea')) {
+                return;
+            }
+
+            const anchor = event.target.closest('a');
+            if (anchor && anchor.getAttribute('href') && anchor.getAttribute('href') !== '#') {
+                return;
+            }
+
+            const rowElement = cell.closest('tr');
+            if (!rowElement || rowElement.classList.contains('child')) {
+                return;
+            }
+
+            const row = manager.instance.row(rowElement);
+            if (!row || !row.data) {
+                return;
+            }
+
+            const data = row.data();
+            if (!data) {
+                return;
+            }
+
+            agHandleRowSelection(manager, manager.instance, rowElement, data, 'row');
+            agOpenRowDefaultView(manager, rowElement, data);
         });
 
         manager.bodyListenerBound = true;
