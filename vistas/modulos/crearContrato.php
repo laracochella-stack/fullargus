@@ -214,7 +214,6 @@ if ($soloLecturaCompleto) {
 require_once 'vistas/partials/content_header.php';
 ag_render_content_header([
     'title' => $tituloPagina,
-    'subtitle' => $estaEditando ? 'Actualiza los datos del contrato seleccionado.' : 'Completa la información para generar un nuevo contrato.',
     'breadcrumbs' => [
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Contratos', 'url' => 'index.php?ruta=contratos'],
@@ -349,7 +348,6 @@ ag_render_record_toolbar([
     'primary_action' => $toolbarPrimary,
     'secondary_action' => $toolbarSecondary,
     'title' => $toolbarTitle,
-    'subtitle' => $toolbarSubtitle,
     'badges' => $toolbarBadges,
     'meta' => $toolbarMeta,
     'menu_actions' => $menuAcciones,

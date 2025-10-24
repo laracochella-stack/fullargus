@@ -302,7 +302,6 @@ $subtituloSolicitud = $solicitudActual
     : 'Completa los datos para generar una nueva solicitud.';
 ag_render_content_header([
     'title' => $tituloSolicitud,
-    'subtitle' => $subtituloSolicitud,
     'breadcrumbs' => [
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Solicitudes', 'url' => 'index.php?ruta=solicitudes'],
@@ -594,7 +593,6 @@ ag_render_record_toolbar([
     'primary_action' => $toolbarPrimary,
     'secondary_action' => $toolbarSecondary,
     'title' => $toolbarTitle,
-    'subtitle' => $toolbarSubtitle,
     'badges' => $toolbarBadges,
     'meta' => $toolbarMeta,
     'menu_actions' => $menuAcciones,

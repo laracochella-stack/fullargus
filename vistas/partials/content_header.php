@@ -19,12 +19,14 @@ if (!function_exists('ag_render_content_header')) {
         $currentApp = isset($config['app']) ? trim((string)$config['app']) : '';
         $currentRoute = isset($config['route']) ? trim((string)$config['route']) : null;
         $appNavigation = $config['appNavigation'] ?? null;
+        $showBreadcrumbs = array_key_exists('show_breadcrumbs', $config) ? (bool)$config['show_breadcrumbs'] : true;
+        $showNavigation = array_key_exists('show_navigation', $config) ? (bool)$config['show_navigation'] : true;
 
         if ($title === '') {
             $title = 'Panel';
         }
 
-        if (!$breadcrumbs) {
+        if (!$breadcrumbs && $showBreadcrumbs) {
             $breadcrumbs = [
                 ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio'],
                 ['label' => $title],
@@ -55,25 +57,27 @@ if (!function_exists('ag_render_content_header')) {
         if ($subtitle !== '') {
             echo '<p class="ag-responsive-subtitle mb-1">' . htmlspecialchars($subtitle, ENT_QUOTES) . '</p>';
         }
-        echo '<nav aria-label="breadcrumb" class="small">';
-        echo '<ol class="breadcrumb m-0">';
-        $lastIndex = count($breadcrumbs) - 1;
-        foreach ($breadcrumbs as $index => $crumb) {
-            $label = htmlspecialchars($crumb['label'] ?? '', ENT_QUOTES);
-            $url = $crumb['url'] ?? null;
-            $icon = trim((string)($crumb['icon'] ?? ''));
-            $iconHtml = $icon !== '' ? '<i class="' . htmlspecialchars($icon, ENT_QUOTES) . ' me-1"></i>' : '';
-            $isActive = $index === $lastIndex || empty($url);
-            if ($isActive) {
-                echo '<li class="breadcrumb-item active" aria-current="page">' . $iconHtml . $label . '</li>';
-            } else {
-                $href = htmlspecialchars($url, ENT_QUOTES);
-                echo '<li class="breadcrumb-item"><a href="' . $href . '">' . $iconHtml . $label . '</a></li>';
+        if ($showBreadcrumbs && !empty($breadcrumbs)) {
+            echo '<nav aria-label="breadcrumb" class="small">';
+            echo '<ol class="breadcrumb m-0">';
+            $lastIndex = count($breadcrumbs) - 1;
+            foreach ($breadcrumbs as $index => $crumb) {
+                $label = htmlspecialchars($crumb['label'] ?? '', ENT_QUOTES);
+                $url = $crumb['url'] ?? null;
+                $icon = trim((string)($crumb['icon'] ?? ''));
+                $iconHtml = $icon !== '' ? '<i class="' . htmlspecialchars($icon, ENT_QUOTES) . ' me-1"></i>' : '';
+                $isActive = $index === $lastIndex || empty($url);
+                if ($isActive) {
+                    echo '<li class="breadcrumb-item active" aria-current="page">' . $iconHtml . $label . '</li>';
+                } else {
+                    $href = htmlspecialchars($url, ENT_QUOTES);
+                    echo '<li class="breadcrumb-item"><a href="' . $href . '">' . $iconHtml . $label . '</a></li>';
+                }
             }
+            echo '</ol>';
+            echo '</nav>';
         }
-        echo '</ol>';
-        echo '</nav>';
-        if (!empty($appNavigation)) {
+        if ($showNavigation && !empty($appNavigation)) {
             echo '<div class="ag-app-navigation mt-3" role="navigation" aria-label="Aplicaciones relacionadas">';
             echo '<ul class="nav nav-pills ag-app-navigation__list flex-wrap">';
             foreach ($appNavigation as $item) {

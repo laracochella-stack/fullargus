@@ -158,7 +158,6 @@ $estadoColores = [
 require_once 'vistas/partials/content_header.php';
 ag_render_content_header([
     'title' => 'Solicitudes',
-    'subtitle' => $esGestorSolicitudes ? 'Administra las solicitudes recibidas y su estado.' : 'Consulta y da seguimiento a tus solicitudes.',
     'breadcrumbs' => [
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Solicitudes'],

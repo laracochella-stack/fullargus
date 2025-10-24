@@ -44,7 +44,6 @@ $contar = static function (?array $items): int {
 require_once 'vistas/partials/content_header.php';
 ag_render_content_header([
     'title' => 'Parámetros generales',
-    'subtitle' => 'Gestiona catálogos, plantillas de contratos y formatos de solicitud.',
     'breadcrumbs' => [
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Parámetros'],

@@ -1838,34 +1838,39 @@ table.dataTable thead th.no-sort::before {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  padding: 1.4rem 1.25rem;
-  border-radius: var(--ag-card-radius);
-  background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  align-items: center;
+  justify-content: center;
+  gap: 1.15rem;
+  padding: 2.1rem 1.25rem;
+  border-radius: 1.35rem;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
   height: 100%;
-  overflow: hidden;
+  text-align: center;
 }
 
 .ag-app-card__link {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 1.15rem;
   color: inherit;
   text-decoration: none;
+  width: 100%;
 }
 
 .ag-app-card__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 1rem;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 1.2rem;
   color: #fff;
-  font-size: 1.3rem;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25);
+  font-size: 1.9rem;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.2);
 }
 
 .ag-app-card__icon.bg-warning.text-dark {
@@ -1873,58 +1878,20 @@ table.dataTable thead th.no-sort::before {
 }
 
 .ag-app-card__title {
-  font-size: clamp(1.05rem, 0.95rem + 0.35vw, 1.3rem);
+  font-size: clamp(1.05rem, 0.95rem + 0.25vw, 1.25rem);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-.ag-app-card__description {
-  color: #6b7280;
-  font-size: 0.9rem;
-}
-
-.ag-app-card__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: auto;
-  padding-top: 0.5rem;
-}
-
-.ag-app-card__action {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.82rem;
-  background-color: rgba(59, 130, 246, 0.08);
-  color: #1d4ed8;
-  text-decoration: none;
-  transition: background-color var(--ag-motion-duration) ease;
-}
-
-.ag-app-card__action:hover {
-  background-color: rgba(59, 130, 246, 0.15);
+.ag-app-card-wrapper:hover .ag-app-card,
+.ag-app-card-wrapper:focus-within .ag-app-card {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
 }
 
 .ag-app-card--drawer {
   box-shadow: none;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  background: #fff;
-}
-
-.ag-app-card__action--drawer {
-  background-color: rgba(107, 114, 128, 0.08);
-  color: #374151;
-}
-
-.ag-app-grid-toolbar h2 {
-  font-weight: 600;
-}
-
-.ag-app-grid-search .input-group-lg .form-control {
-  border-radius: 999px;
+  border-radius: 1rem;
 }
 
 .ag-app-grid-empty[hidden] {
@@ -1986,10 +1953,6 @@ table.dataTable thead th.no-sort::before {
   margin: 0;
 }
 
-.ag-app-drawer__search .form-control {
-  border-radius: 999px;
-}
-
 .ag-app-drawer__content {
   overflow-y: auto;
   max-height: calc(100vh - 9rem);
@@ -2001,13 +1964,6 @@ table.dataTable thead th.no-sort::before {
     padding: 1.1rem 1rem;
   }
 
-  .ag-app-grid-toolbar {
-    text-align: center;
-  }
-
-  .ag-app-grid-search .input-group-lg {
-    width: 100%;
-  }
 }
 
 body.ag-app-drawer-open {

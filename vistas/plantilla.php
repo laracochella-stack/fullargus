@@ -132,6 +132,8 @@ if ($rutaActual === '') {
 $sesionActiva = isset($_SESSION['iniciarSesion']) && $_SESSION['iniciarSesion'] === 'ok';
 $bodyClasses = 'hold-transition layout-top-nav';
 $navigationModules = [];
+// Exponer la ruta actual para otros módulos como el encabezado principal.
+$agCurrentRoute = $rutaActual;
 if ($sesionActiva) {
     try {
         $navigationModules = AppNavigation::getAppCards($_SESSION ?? []);
@@ -153,10 +155,6 @@ if ($sesionActiva) {
         echo '<h2 class="ag-app-drawer__title"><i class="fas fa-cubes me-2"></i>Aplicaciones</h2>';
         echo '<button type="button" class="btn-close" aria-label="Cerrar" data-ag-app-close="true"></button>';
         echo '</div>';
-        echo '<div class="ag-app-drawer__search input-group">';
-        echo '<span class="input-group-text"><i class="fas fa-search"></i></span>';
-        echo '<input type="search" class="form-control" placeholder="Buscar aplicación" autocomplete="off" data-ag-app-filter="drawer">';
-        echo '</div>';
         echo '<div class="ag-app-drawer__content">';
         echo '<div class="row g-3" data-ag-app-grid="drawer">';
         require_once __DIR__ . '/partials/app_card.php';
@@ -164,7 +162,6 @@ if ($sesionActiva) {
             ag_render_app_card($module, [
                 'wrapper_class' => 'col-12 col-sm-6',
                 'card_class' => 'ag-app-card ag-app-card--drawer',
-                'action_class' => 'ag-app-card__action ag-app-card__action--drawer',
             ]);
         }
         echo '</div>';
