@@ -746,18 +746,8 @@ switch ($resource) {
             $id = (int)($nac['id'] ?? 0);
             $identificador = $escape($nac['identificador'] ?? '');
             $nombre = $escape($nac['nombre'] ?? '');
-            $accionesBotones = [
-                sprintf(
-                    '<button type="button" class="btn btn-primary btn-sm btnEditarVariable" data-bs-toggle="modal" data-bs-target="#modalEditarVariable"'
-                    . ' data-id="%1$d" data-identificador="%2$s" data-nombre="%3$s" title="Editar nacionalidad">'
-                    . '<i class="fas fa-pencil-alt"></i>'
-                    . '</button>',
-                    $id,
-                    $identificador,
-                    $nombre
-                ),
-            ];
 
+            $accionesBotones = [];
             if (in_array($permission, ['senior', 'owner', 'admin'], true)) {
                 $accionesBotones[] = sprintf(
                     '<form method="post" class="d-inline" data-ag-confirm="¿Eliminar esta nacionalidad?"'
@@ -779,12 +769,21 @@ switch ($resource) {
             $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 1]);
 
+            $rowId = $id > 0 ? 'nacionalidad-' . $id : uniqid('nacionalidad-');
             $data[] = [
+                'DT_RowId' => $rowId,
+                'DT_RowAttr' => [
+                    'data-row-key' => $rowId,
+                    'data-variable-id' => (string)$id,
+                    'data-variable-tipo' => 'nacionalidad',
+                    'data-identificador' => $identificador,
+                ],
                 'id' => (string)$id,
                 'identificador' => $identificador,
                 'nombre' => $nombre,
                 'acciones' => $acciones,
                 'acciones_menu' => $accionesMenu,
+                'variable_tipo' => 'nacionalidad',
             ];
         }
 
@@ -801,18 +800,8 @@ switch ($resource) {
             $id = (int)($tip['id'] ?? 0);
             $identificador = $escape($tip['identificador'] ?? '');
             $nombre = $escape($tip['nombre'] ?? '');
-            $accionesBotones = [
-                sprintf(
-                    '<button type="button" class="btn btn-primary btn-sm btnEditarVariable" data-bs-toggle="modal" data-bs-target="#modalEditarVariable"'
-                    . ' data-id="%1$d" data-identificador="%2$s" data-nombre="%3$s" title="Editar tipo de contrato">'
-                    . '<i class="fas fa-pencil-alt"></i>'
-                    . '</button>',
-                    $id,
-                    $identificador,
-                    $nombre
-                ),
-            ];
 
+            $accionesBotones = [];
             if (in_array($permission, ['senior', 'owner', 'admin'], true)) {
                 $accionesBotones[] = sprintf(
                     '<form method="post" class="d-inline" data-ag-confirm="¿Eliminar este tipo de contrato?"'
@@ -834,12 +823,21 @@ switch ($resource) {
             $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 1]);
 
+            $rowId = $id > 0 ? 'tipo-contrato-' . $id : uniqid('tipo-contrato-');
             $data[] = [
+                'DT_RowId' => $rowId,
+                'DT_RowAttr' => [
+                    'data-row-key' => $rowId,
+                    'data-variable-id' => (string)$id,
+                    'data-variable-tipo' => 'tipo_contrato',
+                    'data-identificador' => $identificador,
+                ],
                 'id' => (string)$id,
                 'identificador' => $identificador,
                 'nombre' => $nombre,
                 'acciones' => $acciones,
                 'acciones_menu' => $accionesMenu,
+                'variable_tipo' => 'tipo_contrato',
             ];
         }
 
@@ -855,6 +853,7 @@ switch ($resource) {
         foreach ($plantillas as $plantilla) {
             $id = (int)($plantilla['id'] ?? 0);
             $tipo = $escape($plantilla['nombre_tipo'] ?? '');
+            $tipoId = (int)($plantilla['tipo_contrato_id'] ?? 0);
             $nombre = $escape($plantilla['nombre_archivo'] ?? '');
             $ruta = (string)($plantilla['ruta_archivo'] ?? '');
             $rutaNormalizada = '/' . ltrim($ruta, '/');
@@ -863,17 +862,9 @@ switch ($resource) {
                 ? sprintf('<a href="%1$s" target="_blank" rel="noopener" download="%2$s">Descargar</a>', $escape($rutaNormalizada), $nombre)
                 : '<span class="text-danger">Archivo no disponible</span>';
 
-            $accionesBotones = [
-                sprintf(
-                    '<button type="button" class="btn btn-primary btn-sm btnEditarPlantilla" data-bs-toggle="modal" data-bs-target="#modalEditarPlantilla"'
-                    . ' data-id="%1$d" data-tipo-id="%2$d" data-nombre="%3$s" title="Editar plantilla">'
-                    . '<i class="fas fa-pencil-alt"></i>'
-                    . '</button>',
-                    $id,
-                    (int)($plantilla['tipo_contrato_id'] ?? 0),
-                    $nombre
-                ),
-                sprintf(
+            $accionesBotones = [];
+            if (in_array($permission, ['senior', 'owner', 'admin'], true)) {
+                $accionesBotones[] = sprintf(
                     '<form method="post" class="d-inline-block" data-ag-confirm="¿Estás seguro de eliminar esta plantilla?"'
                     . ' data-ag-confirm-title="Eliminar plantilla" data-ag-confirm-icon="warning"'
                     . ' data-ag-confirm-accept="Sí, eliminar" data-ag-confirm-cancel="Cancelar">'
@@ -884,15 +875,23 @@ switch ($resource) {
                     . '</form>',
                     $escape($csrfToken),
                     $id
-                ),
-            ];
+                );
+            }
 
             $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 1]);
 
+            $rowId = $id > 0 ? 'plantilla-contrato-' . $id : uniqid('plantilla-contrato-');
             $data[] = [
+                'DT_RowId' => $rowId,
+                'DT_RowAttr' => [
+                    'data-row-key' => $rowId,
+                    'data-plantilla-id' => (string)$id,
+                    'data-tipo-id' => (string)$tipoId,
+                ],
                 'id' => (string)$id,
                 'tipo' => $tipo,
+                'tipo_id' => $tipoId,
                 'nombre' => $nombre,
                 'archivo' => $archivoHtml,
                 'acciones' => $acciones,
@@ -912,7 +911,6 @@ switch ($resource) {
         foreach ($plantillasSolicitud as $plantilla) {
             $id = (int)($plantilla['id'] ?? 0);
             $tipoOriginal = strtolower((string)($plantilla['tipo'] ?? ''));
-            $tipoAttr = $escape($tipoOriginal);
             $tipoEtiqueta = $tipoOriginal !== '' ? strtoupper($tipoOriginal) : '';
             $tipo = $escape($tipoEtiqueta);
             $nombre = $escape($plantilla['nombre_archivo'] ?? '');
@@ -923,17 +921,9 @@ switch ($resource) {
                 ? sprintf('<a href="%1$s" target="_blank" rel="noopener" download="%2$s">Descargar</a>', $escape($rutaNormalizada), $nombre)
                 : '<span class="text-danger">Archivo no disponible</span>';
 
-            $accionesBotones = [
-                sprintf(
-                    '<button type="button" class="btn btn-secondary btn-sm btnEditarPlantillaSolicitud" data-bs-toggle="modal" data-bs-target="#modalEditarPlantillaSolicitud"'
-                    . ' data-id="%1$d" data-tipo="%2$s" data-nombre="%3$s" title="Editar plantilla de solicitud">'
-                    . '<i class="fas fa-edit"></i>'
-                    . '</button>',
-                    $id,
-                    $tipoAttr,
-                    $nombre
-                ),
-                sprintf(
+            $accionesBotones = [];
+            if (in_array($permission, ['senior', 'owner', 'admin'], true)) {
+                $accionesBotones[] = sprintf(
                     '<form method="post" class="d-inline-block" data-ag-confirm="¿Eliminar plantilla de solicitud?"'
                     . ' data-ag-confirm-title="Eliminar plantilla" data-ag-confirm-icon="warning"'
                     . ' data-ag-confirm-accept="Sí, eliminar" data-ag-confirm-cancel="Cancelar">'
@@ -944,15 +934,23 @@ switch ($resource) {
                     . '</form>',
                     $escape($csrfToken),
                     $id
-                ),
-            ];
+                );
+            }
 
             $accionesMenu = $renderActionMenu($accionesBotones);
             $acciones = $renderActionButtons($accionesBotones, ['primary' => 1]);
 
+            $rowId = $id > 0 ? 'plantilla-solicitud-' . $id : uniqid('plantilla-solicitud-');
             $data[] = [
+                'DT_RowId' => $rowId,
+                'DT_RowAttr' => [
+                    'data-row-key' => $rowId,
+                    'data-plantilla-id' => (string)$id,
+                    'data-tipo' => $tipoOriginal,
+                ],
                 'id' => (string)$id,
                 'tipo' => $tipo,
+                'tipo_valor' => $tipoOriginal,
                 'nombre' => $nombre,
                 'archivo' => $archivoHtml,
                 'acciones' => $acciones,

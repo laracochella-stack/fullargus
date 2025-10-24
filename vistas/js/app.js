@@ -1036,6 +1036,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        if (typeof agEditableTables !== 'undefined' && agEditableTables && typeof agEditableTables.attach === 'function') {
+            agEditableTables.attach(tableElement, event.detail.instance);
+        }
+
         agInitializeTableInteractions(manager, event.detail.instance, tableElement);
     });
 
@@ -4877,223 +4881,1007 @@ document.addEventListener('DOMContentLoaded', () => {
         reload: false
     });
 
-    const procesarFormularioParametros = (form, opciones) => {
-        if (!form) {
+    const agEditableTables = (() => {
+        const tableStates = new Map();
+
+        const toDatasetProperty = (key) => {
+            if (!key) {
+                return '';
+            }
+            return String(key)
+                .trim()
+                .replace(/[^a-zA-Z0-9_-]/g, '-')
+                .replace(/[-_]+([a-zA-Z0-9])/g, (_, chr) => chr.toUpperCase())
+                .replace(/^[-_]+/, '');
+        };
+
+        const toKebabCase = (value) => {
+            if (!value) {
+                return '';
+            }
+            return String(value)
+                .trim()
+                .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+                .replace(/[_\s]+/g, '-')
+                .toLowerCase();
+        };
+
+        const escapeHtml = (value) => {
+            if (value == null) {
+                return '';
+            }
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        };
+
+        const getTableElement = (target) => {
+            if (!target) {
+                return null;
+            }
+            if (target instanceof Element) {
+                return target;
+            }
+            if (typeof target === 'string') {
+                return document.querySelector(target);
+            }
+            return null;
+        };
+
+        const getActionButtons = (state, action) => {
+            if (!state || !state.table || !state.table.id) {
+                return [];
+            }
+            const selector = `[data-editable-action="${action}"][data-editable-target="#${state.table.id}"]`;
+            return Array.from(document.querySelectorAll(selector));
+        };
+
+        const buildColumnsMeta = (table) => {
+            const headers = table.querySelectorAll('thead th');
+            const metas = [];
+            headers.forEach((th, index) => {
+                const field = th.getAttribute('data-editable-field');
+                if (!field) {
+                    metas[index] = null;
+                    return;
+                }
+
+                const editor = (th.getAttribute('data-editor') || 'text').toLowerCase();
+                const payloadKey = th.getAttribute('data-payload') || field;
+                const valueKey = th.getAttribute('data-value-key') || payloadKey;
+                const datasetProp = toDatasetProperty(valueKey || field);
+                const requiredAttr = th.getAttribute('data-required');
+                const maxlengthAttr = th.getAttribute('data-maxlength');
+                const selectAttr = th.getAttribute('data-select-options');
+                const fieldSlug = toKebabCase(field);
+                const tableSelectAttr = table.getAttribute(`data-select-${fieldSlug}-options`)
+                    || (fieldSlug === 'tipo' ? table.getAttribute('data-select-tipo-options') : null);
+
+                let options = [];
+                if (selectAttr) {
+                    const parsed = parseJsonAttribute(selectAttr);
+                    if (Array.isArray(parsed)) {
+                        options = parsed;
+                    }
+                } else if (tableSelectAttr) {
+                    const parsed = parseJsonAttribute(tableSelectAttr);
+                    if (Array.isArray(parsed)) {
+                        options = parsed;
+                    }
+                }
+
+                metas[index] = {
+                    index,
+                    field,
+                    editor,
+                    payloadKey,
+                    valueKey,
+                    datasetProp,
+                    required: requiredAttr === '1' || requiredAttr === 'true',
+                    maxlength: maxlengthAttr ? parseInt(maxlengthAttr, 10) || null : null,
+                    accept: th.getAttribute('data-accept') || '',
+                    options: Array.isArray(options)
+                        ? options.map((opt) => ({
+                            value: opt && Object.prototype.hasOwnProperty.call(opt, 'value')
+                                ? String(opt.value)
+                                : (opt && Object.prototype.hasOwnProperty.call(opt, 'id') ? String(opt.id) : ''),
+                            label: opt && Object.prototype.hasOwnProperty.call(opt, 'label')
+                                ? String(opt.label)
+                                : (opt && Object.prototype.hasOwnProperty.call(opt, 'text')
+                                    ? String(opt.text)
+                                    : (opt && Object.prototype.hasOwnProperty.call(opt, 'nombre')
+                                        ? String(opt.nombre)
+                                        : (opt && Object.prototype.hasOwnProperty.call(opt, 'etiqueta')
+                                            ? String(opt.etiqueta)
+                                            : ''))),
+                        }))
+                        : [],
+                };
+            });
+            return metas;
+        };
+
+        const ensureState = (table, instance) => {
+            const existing = tableStates.get(table);
+            if (existing) {
+                if (!existing.instance && instance) {
+                    existing.instance = instance;
+                }
+                return existing;
+            }
+
+            const editable = table.getAttribute('data-editable');
+            if (editable !== '1') {
+                return null;
+            }
+
+            const state = {
+                table,
+                instance: instance || null,
+                type: table.getAttribute('data-editable-type') || '',
+                variableType: table.getAttribute('data-variable-type') || '',
+                endpoint: (table.getAttribute('data-editable-endpoint') || 'index.php?ruta=parametros').trim() || 'index.php?ruta=parametros',
+                columns: buildColumnsMeta(table),
+                rows: new Map(),
+                dirtyRows: new Set(),
+                saving: false,
+            };
+
+            tableStates.set(table, state);
+
+            table.addEventListener('dblclick', (event) => handleDblClick(state, event));
+
+            if (typeof $ !== 'undefined') {
+                $(table).on('draw.dt', () => {
+                    syncDom(state);
+                });
+            }
+
+            return state;
+        };
+
+        const applyRowClasses = (state, rowState) => {
+            if (!rowState || !rowState.node) {
+                return;
+            }
+            const node = rowState.node;
+            const isDirty = rowState.isNew || rowState.dirtyFields.size > 0 || rowState.files.size > 0;
+            node.classList.toggle('ag-editable-row-new', !!rowState.isNew);
+            node.classList.toggle('ag-editable-row-dirty', isDirty);
+        };
+
+        const updateSaveButtons = (state) => {
+            const hasChanges = state.dirtyRows.size > 0;
+            const saveButtons = getActionButtons(state, 'save');
+            saveButtons.forEach((button) => {
+                button.classList.toggle('d-none', !hasChanges);
+                button.disabled = state.saving;
+                if (state.saving) {
+                    button.setAttribute('aria-busy', 'true');
+                } else {
+                    button.removeAttribute('aria-busy');
+                }
+            });
+            const newButtons = getActionButtons(state, 'new');
+            newButtons.forEach((button) => {
+                button.disabled = state.saving;
+            });
+        };
+
+        const normalizeRowKey = (rowApi, node) => {
+            if (node && node.getAttribute('data-row-key')) {
+                return node.getAttribute('data-row-key');
+            }
+            const id = rowApi && typeof rowApi.id === 'function' ? rowApi.id() : null;
+            if (id) {
+                return id;
+            }
+            if (node && node.id) {
+                return node.id;
+            }
+            const idx = rowApi && typeof rowApi.index === 'function' ? rowApi.index() : null;
+            return idx && typeof idx.row !== 'undefined' ? `row-${idx.row}` : null;
+        };
+
+        const extractInitialValue = (rowApi, dataset, meta) => {
+            if (!meta) {
+                return '';
+            }
+            const data = rowApi.data ? rowApi.data() : null;
+            if (meta.editor === 'select') {
+                const datasetValue = dataset && meta.datasetProp ? dataset[meta.datasetProp] : undefined;
+                if (typeof datasetValue !== 'undefined') {
+                    return String(datasetValue);
+                }
+                if (data && Object.prototype.hasOwnProperty.call(data, meta.valueKey)) {
+                    return String(data[meta.valueKey] ?? '');
+                }
+            }
+            if (meta.editor === 'text') {
+                if (data && Object.prototype.hasOwnProperty.call(data, meta.payloadKey)) {
+                    return String(data[meta.payloadKey] ?? '');
+                }
+                if (data && Object.prototype.hasOwnProperty.call(data, meta.field)) {
+                    return String(data[meta.field] ?? '');
+                }
+            }
+            return '';
+        };
+
+        const ensureRowState = (state, rowApi) => {
+            if (!state || !state.instance || !rowApi) {
+                return null;
+            }
+            const node = rowApi.node ? rowApi.node() : null;
+            const dataset = node ? { ...node.dataset } : {};
+            const rowKey = normalizeRowKey(rowApi, node);
+            if (!rowKey) {
+                return null;
+            }
+
+            let rowState = state.rows.get(rowKey);
+            if (!rowState) {
+                const values = {};
+                const display = {};
+                state.columns.forEach((meta) => {
+                    if (!meta) {
+                        return;
+                    }
+                    values[meta.field] = extractInitialValue(rowApi, dataset, meta);
+                    const data = rowApi.data ? rowApi.data() : null;
+                    if (data && Object.prototype.hasOwnProperty.call(data, meta.field)) {
+                        display[meta.field] = data[meta.field];
+                    }
+                });
+
+                rowState = {
+                    key: rowKey,
+                    node,
+                    rowApi,
+                    dataset,
+                    isNew: dataset && dataset.newRow === '1',
+                    values,
+                    originalValues: { ...values },
+                    display,
+                    dirtyFields: new Set(),
+                    invalidFields: new Set(),
+                    files: new Map(),
+                };
+
+                if (rowState.isNew) {
+                    Object.keys(values).forEach((field) => {
+                        rowState.dirtyFields.add(field);
+                    });
+                    state.dirtyRows.add(rowState.key);
+                }
+
+                state.rows.set(rowKey, rowState);
+            } else {
+                rowState.node = node;
+                rowState.rowApi = rowApi;
+                rowState.dataset = dataset;
+            }
+
+            applyRowClasses(state, rowState);
+            return rowState;
+        };
+
+        const syncDom = (state) => {
+            if (!state || !state.instance) {
+                return;
+            }
+            state.instance.rows({ page: 'current' }).every(function sincronizarFila() {
+                const rowState = ensureRowState(state, this);
+                applyRowClasses(state, rowState);
+            });
+            updateSaveButtons(state);
+        };
+
+        const getSelectLabel = (meta, value) => {
+            if (!meta || !Array.isArray(meta.options)) {
+                return value;
+            }
+            const stringValue = value == null ? '' : String(value);
+            const option = meta.options.find((opt) => String(opt.value) === stringValue);
+            return option ? option.label : stringValue;
+        };
+
+        const markCellValidity = (rowState, meta, isValid) => {
+            if (!rowState || !rowState.node || !meta) {
+                return;
+            }
+            const cell = rowState.rowApi && typeof rowState.rowApi.cell === 'function'
+                ? rowState.rowApi.cell(rowState.node, meta.index)
+                : null;
+            const cellNode = cell && cell.node ? cell.node() : null;
+            if (cellNode) {
+                cellNode.classList.toggle('ag-editable-cell-invalid', !isValid);
+            }
+            if (!isValid) {
+                rowState.invalidFields.add(meta.field);
+            } else {
+                rowState.invalidFields.delete(meta.field);
+            }
+        };
+
+        const setRowValue = (state, rowState, meta, rawValue, displayOverride) => {
+            if (!state || !rowState || !meta) {
+                return;
+            }
+
+            const value = meta.editor === 'text' && typeof rawValue === 'string'
+                ? rawValue.trim()
+                : (rawValue == null ? '' : rawValue);
+
+            rowState.values[meta.field] = value;
+
+            if (meta.datasetProp) {
+                rowState.dataset[meta.datasetProp] = value;
+                if (rowState.node) {
+                    rowState.node.dataset[meta.datasetProp] = value;
+                }
+            }
+
+            const cell = state.instance.cell(rowState.node, meta.index);
+            const displayValue = displayOverride != null
+                ? displayOverride
+                : (meta.editor === 'select'
+                    ? escapeHtml(getSelectLabel(meta, value))
+                    : (meta.editor === 'file'
+                        ? (value ? `<span class="ag-editable-file-selected">${escapeHtml(value)}</span>` : '')
+                        : escapeHtml(value)));
+
+            if (!rowState.display) {
+                rowState.display = {};
+            }
+            rowState.display[meta.field] = displayValue;
+
+            if (cell && typeof cell.data === 'function') {
+                cell.data(displayValue).draw(false);
+            }
+
+            const original = rowState.originalValues[meta.field] ?? '';
+            const normalizedOriginal = typeof original === 'string' ? original.trim() : original;
+            const normalizedValue = typeof value === 'string' ? value.trim() : value;
+
+            if (rowState.isNew) {
+                rowState.dirtyFields.add(meta.field);
+            } else if (normalizedOriginal === normalizedValue) {
+                rowState.dirtyFields.delete(meta.field);
+            } else {
+                rowState.dirtyFields.add(meta.field);
+            }
+
+            if (meta.editor !== 'file') {
+                const isValid = !(meta.required && (value === '' || value == null));
+                markCellValidity(rowState, meta, isValid);
+            }
+
+            const isDirty = rowState.isNew || rowState.dirtyFields.size > 0 || rowState.files.size > 0;
+            if (isDirty) {
+                state.dirtyRows.add(rowState.key);
+            } else {
+                state.dirtyRows.delete(rowState.key);
+            }
+            applyRowClasses(state, rowState);
+            updateSaveButtons(state);
+        };
+
+        const startTextEdit = (state, cellNode, meta, rowState) => {
+            if (!cellNode || cellNode.classList.contains('dataTables_empty')) {
+                return;
+            }
+            if (cellNode.classList.contains('ag-editable-cell-editing')) {
+                return;
+            }
+
+            const currentValue = rowState.values[meta.field] ?? '';
+            const originalHtml = cellNode.innerHTML;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue;
+            input.className = 'form-control form-control-sm ag-editable-input';
+            if (meta.maxlength) {
+                input.maxLength = meta.maxlength;
+            }
+
+            cellNode.classList.add('ag-editable-cell-editing');
+            cellNode.innerHTML = '';
+            cellNode.appendChild(input);
+            input.focus();
+            input.select();
+
+            const finalize = (commit) => {
+                cellNode.classList.remove('ag-editable-cell-editing');
+                if (!commit) {
+                    cellNode.innerHTML = originalHtml;
+                    return;
+                }
+                const nuevo = input.value || '';
+                setRowValue(state, rowState, meta, nuevo);
+            };
+
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    finalize(true);
+                } else if (event.key === 'Escape') {
+                    event.preventDefault();
+                    finalize(false);
+                }
+            });
+
+            input.addEventListener('blur', () => {
+                finalize(true);
+            });
+        };
+
+        const startSelectEdit = (state, cellNode, meta, rowState) => {
+            if (!cellNode || meta.editor !== 'select') {
+                return;
+            }
+            const options = Array.isArray(meta.options) ? meta.options : [];
+            if (options.length === 0) {
+                return;
+            }
+
+            const select = document.createElement('select');
+            select.className = 'form-select form-select-sm ag-editable-select';
+            options.forEach((opt) => {
+                const optionEl = document.createElement('option');
+                optionEl.value = String(opt.value ?? '');
+                optionEl.textContent = opt.label ?? opt.value ?? '';
+                select.appendChild(optionEl);
+            });
+            const currentValue = rowState.values[meta.field] ?? '';
+            select.value = currentValue;
+
+            const commit = () => {
+                const value = select.value;
+                const label = getSelectLabel(meta, value);
+                setRowValue(state, rowState, meta, value, escapeHtml(label));
+            };
+
+            select.addEventListener('change', () => {
+                commit();
+            });
+            select.addEventListener('blur', () => {
+                commit();
+            });
+
+            cellNode.classList.add('ag-editable-cell-editing');
+            const originalHtml = cellNode.innerHTML;
+            cellNode.innerHTML = '';
+            cellNode.appendChild(select);
+            select.focus();
+
+            const handleKey = (event) => {
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    cellNode.classList.remove('ag-editable-cell-editing');
+                    cellNode.innerHTML = originalHtml;
+                } else if (event.key === 'Enter') {
+                    event.preventDefault();
+                    cellNode.classList.remove('ag-editable-cell-editing');
+                    commit();
+                }
+            };
+
+            select.addEventListener('keydown', handleKey);
+        };
+
+        const startFileEdit = (state, meta, rowState) => {
+            if (!meta || meta.editor !== 'file') {
+                return;
+            }
+            const input = document.createElement('input');
+            input.type = 'file';
+            if (meta.accept) {
+                input.accept = meta.accept;
+            }
+            input.className = 'd-none';
+            document.body.appendChild(input);
+
+            input.addEventListener('change', () => {
+                const file = input.files && input.files.length ? input.files[0] : null;
+                document.body.removeChild(input);
+                if (!file) {
+                    return;
+                }
+                rowState.files.set(meta.field, file);
+                setRowValue(state, rowState, meta, file.name);
+                state.dirtyRows.add(rowState.key);
+                applyRowClasses(state, rowState);
+                updateSaveButtons(state);
+            });
+
+            input.click();
+        };
+
+        const handleDblClick = (state, event) => {
+            if (!state || !state.instance) {
+                return;
+            }
+            const cellNode = event.target instanceof Element ? event.target.closest('td') : null;
+            if (!cellNode) {
+                return;
+            }
+            const rowNode = cellNode.closest('tr');
+            if (!rowNode || rowNode.classList.contains('child')) {
+                return;
+            }
+            const cell = state.instance.cell(cellNode);
+            if (!cell || !cell.index) {
+                return;
+            }
+            const index = cell.index();
+            const meta = state.columns[index.column];
+            if (!meta) {
+                return;
+            }
+            const rowApi = state.instance.row(index.row);
+            const rowState = ensureRowState(state, rowApi);
+            if (!rowState) {
+                return;
+            }
+
+            if (meta.editor === 'text') {
+                startTextEdit(state, cellNode, meta, rowState);
+                return;
+            }
+            if (meta.editor === 'select') {
+                startSelectEdit(state, cellNode, meta, rowState);
+                return;
+            }
+            if (meta.editor === 'file') {
+                startFileEdit(state, meta, rowState);
+            }
+        };
+
+        const createRemoveButtonHtml = (rowKey) => (
+            `<button type="button" class="btn btn-outline-danger btn-sm" data-editable-remove-row="${escapeHtml(rowKey)}" title="Descartar fila">`
+            + '<i class="fas fa-times"></i>'
+            + '</button>'
+        );
+
+        const addNewRow = (state) => {
+            if (!state || !state.instance) {
+                return;
+            }
+
+            const timestamp = Date.now();
+            const rowKey = `nuevo-${timestamp}-${Math.floor(Math.random() * 1000)}`;
+            const accionesHtml = `<div class="d-flex align-items-center gap-2">${createRemoveButtonHtml(rowKey)}</div>`;
+
+            const baseData = {};
+            if (state.type === 'variable') {
+                baseData.id = '';
+                baseData.identificador = '—';
+                baseData.nombre = '';
+                baseData.acciones = accionesHtml;
+            } else if (state.type === 'plantilla-contrato') {
+                baseData.id = '';
+                baseData.tipo = '<span class="text-muted">Seleccione</span>';
+                baseData.nombre = '<span class="text-muted">Sin nombre</span>';
+                baseData.archivo = '<span class="text-muted">Sin archivo</span>';
+                baseData.acciones = accionesHtml;
+            } else if (state.type === 'plantilla-solicitud') {
+                baseData.id = '';
+                baseData.tipo = '<span class="text-muted">Seleccione</span>';
+                baseData.nombre = '<span class="text-muted">Sin nombre</span>';
+                baseData.archivo = '<span class="text-muted">Sin archivo</span>';
+                baseData.acciones = accionesHtml;
+            } else {
+                return;
+            }
+
+            const rowApi = state.instance.row.add(baseData);
+            state.instance.draw(false);
+            const node = rowApi.node();
+            if (node) {
+                node.setAttribute('data-row-key', rowKey);
+                node.setAttribute('data-new-row', '1');
+                if (state.type === 'variable') {
+                    node.dataset.variableId = '';
+                    node.dataset.variableTipo = state.variableType || '';
+                    node.dataset.identificador = '';
+                } else if (state.type === 'plantilla-contrato') {
+                    node.dataset.plantillaId = '';
+                    node.dataset.tipoId = '';
+                } else if (state.type === 'plantilla-solicitud') {
+                    node.dataset.plantillaId = '';
+                    node.dataset.tipo = '';
+                }
+            }
+
+            const rowState = ensureRowState(state, rowApi);
+            if (rowState) {
+                rowState.isNew = true;
+                state.dirtyRows.add(rowState.key);
+                applyRowClasses(state, rowState);
+                updateSaveButtons(state);
+
+                const editableMeta = state.columns.find((meta) => meta && meta.editor !== 'file');
+                if (editableMeta && rowState.node) {
+                    const cell = state.instance.cell(rowState.node, editableMeta.index);
+                    const cellNode = cell && cell.node ? cell.node() : null;
+                    if (cellNode) {
+                        if (editableMeta.editor === 'text') {
+                            setTimeout(() => startTextEdit(state, cellNode, editableMeta, rowState), 20);
+                        } else if (editableMeta.editor === 'select') {
+                            setTimeout(() => startSelectEdit(state, cellNode, editableMeta, rowState), 20);
+                        }
+                    }
+                }
+            }
+        };
+
+        const removePendingRow = (state, rowKey) => {
+            if (!state || !rowKey) {
+                return;
+            }
+            const rowState = state.rows.get(rowKey);
+            if (!rowState || !rowState.isNew) {
+                return;
+            }
+            if (rowState.rowApi && typeof rowState.rowApi.remove === 'function') {
+                rowState.rowApi.remove();
+                state.instance.draw(false);
+            }
+            state.rows.delete(rowKey);
+            state.dirtyRows.delete(rowKey);
+            updateSaveButtons(state);
+        };
+
+        const collectDirtyRows = (state) => Array.from(state.rows.values()).filter((rowState) => (
+            rowState.isNew
+            || rowState.dirtyFields.size > 0
+            || rowState.files.size > 0
+        ));
+
+        const buildFormDataForRow = (state, rowState, csrfToken) => {
+            const formData = new FormData();
+            formData.append('csrf_token', csrfToken);
+
+            if (state.type === 'variable') {
+                const nombre = (rowState.values.nombre || '').trim();
+                if (nombre === '') {
+                    const meta = state.columns.find((col) => col && col.field === 'nombre');
+                    if (meta) {
+                        markCellValidity(rowState, meta, false);
+                    }
+                    mostrarAlertaParametros({
+                        icon: 'warning',
+                        title: 'Datos incompletos',
+                        text: 'El nombre es obligatorio.',
+                        reload: false,
+                    });
+                    return null;
+                }
+
+                if (rowState.isNew) {
+                    formData.append('agregarVariable', '1');
+                    formData.append('tipo', state.variableType || '');
+                    formData.append('nombre', nombre);
+                    return { formData, opciones: { successTitle: 'Guardado', successText: 'Registro añadido correctamente.' } };
+                }
+
+                const variableId = rowState.dataset.variableId || '';
+                const identificador = rowState.dataset.identificador || '';
+                if (!variableId) {
+                    mostrarAlertaParametros({
+                        icon: 'error',
+                        title: 'Error de datos',
+                        text: 'No se encontró el identificador del registro.',
+                        reload: false,
+                    });
+                    return null;
+                }
+
+                formData.append('editarVariable', '1');
+                formData.append('id', variableId);
+                formData.append('identificador', identificador);
+                formData.append('nombre', nombre);
+                return { formData, opciones: { successTitle: 'Actualizado', successText: 'Registro actualizado correctamente.' } };
+            }
+
+            if (state.type === 'plantilla-contrato') {
+                const tipoMeta = state.columns.find((col) => col && col.field === 'tipo');
+                const archivoMeta = state.columns.find((col) => col && col.field === 'archivo');
+                const tipoId = (rowState.dataset.tipoId || rowState.values.tipo || '').trim();
+                if (tipoId === '' && tipoMeta) {
+                    markCellValidity(rowState, tipoMeta, false);
+                    mostrarAlertaParametros({
+                        icon: 'warning',
+                        title: 'Datos incompletos',
+                        text: 'Selecciona un tipo de contrato para la plantilla.',
+                        reload: false,
+                    });
+                    return null;
+                }
+
+                if (rowState.isNew) {
+                    const file = rowState.files.get('archivo');
+                    if (!file && archivoMeta) {
+                        mostrarAlertaParametros({
+                            icon: 'warning',
+                            title: 'Datos incompletos',
+                            text: 'Debes seleccionar un archivo para la nueva plantilla.',
+                            reload: false,
+                        });
+                        return null;
+                    }
+                    formData.append('subirPlantilla', '1');
+                    formData.append('tipo_contrato_id', tipoId);
+                    if (file) {
+                        formData.append('plantilla', file, file.name);
+                    }
+                    return { formData, opciones: { successTitle: 'Guardado', successText: 'Plantilla registrada correctamente.' } };
+                }
+
+                const plantillaId = rowState.dataset.plantillaId || '';
+                if (!plantillaId) {
+                    mostrarAlertaParametros({
+                        icon: 'error',
+                        title: 'Error de datos',
+                        text: 'No se encontró la plantilla a actualizar.',
+                        reload: false,
+                    });
+                    return null;
+                }
+
+                formData.append('editarPlantilla', '1');
+                formData.append('plantilla_id', plantillaId);
+                formData.append('tipo_contrato_id', tipoId);
+                const file = rowState.files.get('archivo');
+                if (file) {
+                    formData.append('plantilla', file, file.name);
+                }
+                return { formData, opciones: { successTitle: 'Actualizado', successText: 'Plantilla actualizada correctamente.' } };
+            }
+
+            if (state.type === 'plantilla-solicitud') {
+                const tipoMeta = state.columns.find((col) => col && col.field === 'tipo');
+                const archivoMeta = state.columns.find((col) => col && col.field === 'archivo');
+                const tipoValor = (rowState.dataset.tipo || rowState.values.tipo || '').trim();
+                if (tipoValor === '' && tipoMeta) {
+                    markCellValidity(rowState, tipoMeta, false);
+                    mostrarAlertaParametros({
+                        icon: 'warning',
+                        title: 'Datos incompletos',
+                        text: 'Selecciona el tipo de plantilla de solicitud.',
+                        reload: false,
+                    });
+                    return null;
+                }
+
+                if (rowState.isNew) {
+                    const file = rowState.files.get('archivo');
+                    if (!file && archivoMeta) {
+                        mostrarAlertaParametros({
+                            icon: 'warning',
+                            title: 'Datos incompletos',
+                            text: 'Selecciona un archivo para la plantilla de solicitud.',
+                            reload: false,
+                        });
+                        return null;
+                    }
+                    formData.append('subirPlantillaSolicitud', '1');
+                    formData.append('plantilla_tipo', tipoValor);
+                    if (file) {
+                        formData.append('plantilla', file, file.name);
+                    }
+                    return { formData, opciones: { successTitle: 'Guardado', successText: 'Plantilla registrada correctamente.' } };
+                }
+
+                const plantillaId = rowState.dataset.plantillaId || '';
+                if (!plantillaId) {
+                    mostrarAlertaParametros({
+                        icon: 'error',
+                        title: 'Error de datos',
+                        text: 'No se encontró la plantilla de solicitud seleccionada.',
+                        reload: false,
+                    });
+                    return null;
+                }
+
+                formData.append('editarPlantillaSolicitud', '1');
+                formData.append('plantilla_solicitud_id', plantillaId);
+                formData.append('plantilla_tipo', tipoValor);
+                const file = rowState.files.get('archivo');
+                if (file) {
+                    formData.append('plantilla', file, file.name);
+                }
+                return { formData, opciones: { successTitle: 'Actualizado', successText: 'Plantilla actualizada correctamente.' } };
+            }
+
+            return null;
+        };
+
+        const saveChanges = async (state) => {
+            if (!state || state.saving) {
+                return;
+            }
+
+            const dirtyRows = collectDirtyRows(state);
+            if (dirtyRows.length === 0) {
+                return;
+            }
+
+            const csrfToken = obtenerCsrfToken();
+            if (!csrfToken) {
+                mostrarAlertaParametros({
+                    icon: 'error',
+                    title: 'Token no disponible',
+                    text: 'No se pudo obtener el token de seguridad para guardar los cambios.',
+                    reload: false,
+                });
+                return;
+            }
+
+            state.saving = true;
+            updateSaveButtons(state);
+
+            try {
+                let exitosos = 0;
+                for (const rowState of dirtyRows) {
+                    const payload = buildFormDataForRow(state, rowState, csrfToken);
+                    if (!payload) {
+                        state.saving = false;
+                        updateSaveButtons(state);
+                        return;
+                    }
+
+                    const respuesta = await fetch(state.endpoint, {
+                        method: 'POST',
+                        body: payload.formData,
+                    });
+                    const texto = await respuesta.text();
+                    const interpretado = interpretarRespuestaParametros(texto, {
+                        successTitle: payload.opciones?.successTitle,
+                        successText: payload.opciones?.successText,
+                        reload: false,
+                    });
+
+                    if (!respuesta.ok || interpretado.icon !== 'success') {
+                        state.saving = false;
+                        updateSaveButtons(state);
+                        await mostrarAlertaParametros({ ...interpretado, reload: false });
+                        return;
+                    }
+
+                    exitosos += 1;
+                }
+
+                state.saving = false;
+                updateSaveButtons(state);
+                state.rows.clear();
+                state.dirtyRows.clear();
+
+                await mostrarAlertaParametros({
+                    icon: 'success',
+                    title: exitosos > 1 ? 'Cambios guardados' : 'Registro guardado',
+                    text: exitosos > 1
+                        ? `Se guardaron ${exitosos} registros correctamente.`
+                        : 'Los cambios se guardaron correctamente.',
+                    reload: false,
+                });
+
+                const manager = getDataTableManager();
+                if (manager && typeof manager.reload === 'function') {
+                    manager.reload(state.table, {}, false);
+                } else if (state.instance && state.instance.ajax && typeof state.instance.ajax.reload === 'function') {
+                    state.instance.ajax.reload(null, false);
+                }
+            } catch (error) {
+                console.error('Error al guardar parámetros', error);
+                state.saving = false;
+                updateSaveButtons(state);
+                mostrarErrorConexionParametros();
+            }
+        };
+
+        const attach = (table, instance) => {
+            if (!table) {
+                return null;
+            }
+            const state = ensureState(table, instance);
+            if (!state) {
+                return null;
+            }
+            state.instance = state.instance || instance;
+            syncDom(state);
+            return state;
+        };
+
+        return {
+            attach,
+            handleData(table) {
+                const el = getTableElement(table);
+                const state = el ? tableStates.get(el) : null;
+                if (!state) {
+                    return;
+                }
+                state.rows.clear();
+                state.dirtyRows.clear();
+                updateSaveButtons(state);
+            },
+            addNewRowFor(target) {
+                const table = getTableElement(target);
+                const state = table ? tableStates.get(table) : null;
+                if (!state) {
+                    return;
+                }
+                addNewRow(state);
+            },
+            saveTableFor(target) {
+                const table = getTableElement(target);
+                const state = table ? tableStates.get(table) : null;
+                if (!state) {
+                    return;
+                }
+                saveChanges(state);
+            },
+            removeRowFor(target, rowKey) {
+                const table = getTableElement(target);
+                const state = table ? tableStates.get(table) : null;
+                if (!state) {
+                    return;
+                }
+                removePendingRow(state, rowKey);
+            },
+        };
+    })();
+
+    if (typeof window !== 'undefined') {
+        window.agEditableTables = agEditableTables;
+    }
+
+    document.addEventListener('ag:datatable:data', (event) => {
+        if (!event || typeof event.detail !== 'object' || !event.detail.element) {
             return;
         }
-
-        form.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const formData = new FormData(form);
-            const endpoint = (form.getAttribute('action') || 'index.php?ruta=parametros').trim() || 'index.php?ruta=parametros';
-            fetch(endpoint, {
-                method: 'POST',
-                body: formData
-            })
-                .then((respuesta) => respuesta.text())
-                .then((texto) => mostrarAlertaParametros(
-                    interpretarRespuestaParametros(texto, opciones)
-                ))
-                .catch(() => mostrarErrorConexionParametros());
-        });
-    };
-
-    // Formulario agregar nacionalidad o tipo de contrato (comparten clase)
-    const formAddNacionalidad = document.getElementById('formAddNacionalidad');
-    const formAddTipo = document.getElementById('formAddTipo');
-    procesarFormularioParametros(formAddNacionalidad, {
-        successTitle: 'Guardado',
-        successText: 'Registro añadido correctamente.'
-    });
-    procesarFormularioParametros(formAddTipo, {
-        successTitle: 'Guardado',
-        successText: 'Registro añadido correctamente.'
+        agEditableTables.handleData(event.detail.element);
     });
 
-    // Botones editar variable
-    const formEditarVariable = document.getElementById('formEditarVariable');
-    if (formEditarVariable) {
-        document.addEventListener('click', (event) => {
-            const btn = event.target.closest('.btnEditarVariable');
-            if (!btn || !btn.isConnected) {
-                return;
-            }
-
-            const id = btn.getAttribute('data-id') || '';
-            const ident = btn.getAttribute('data-identificador') || '';
-            const nombre = btn.getAttribute('data-nombre') || '';
-
-            const idInput = document.getElementById('editarVariableId');
-            const identificadorInput = document.getElementById('editarVariableIdentificador');
-            const nombreInput = document.getElementById('editarVariableNombre');
-
-            if (idInput) {
-                idInput.value = id;
-            }
-            if (identificadorInput) {
-                identificadorInput.value = ident;
-            }
-            if (nombreInput) {
-                nombreInput.value = nombre;
-            }
-        });
-
-        formEditarVariable.addEventListener('submit', (event) => {
+    document.addEventListener('click', (event) => {
+        const actionButton = event.target.closest('[data-editable-action]');
+        if (!actionButton) {
+            return;
+        }
+        const targetSelector = actionButton.getAttribute('data-editable-target');
+        if (!targetSelector) {
+            return;
+        }
+        const action = actionButton.getAttribute('data-editable-action');
+        if (action === 'new') {
             event.preventDefault();
-            Swal.fire({
-                title: '¿Estás seguro de modificar los datos?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, modificar',
-                cancelButtonText: 'Cancelar'
-            }).then((resultado) => {
-                if (!resultado.isConfirmed) {
-                    return;
-                }
-                const formData = new FormData(formEditarVariable);
-                const endpoint = (formEditarVariable.getAttribute('action') || 'index.php?ruta=parametros').trim() || 'index.php?ruta=parametros';
-                fetch(endpoint, {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then((respuesta) => respuesta.text())
-                    .then((texto) => mostrarAlertaParametros(
-                        interpretarRespuestaParametros(texto, {
-                            successTitle: 'Guardado',
-                            successText: 'Registro actualizado correctamente.'
-                        })
-                    ))
-                    .catch(() => mostrarErrorConexionParametros());
-            });
-        });
-    }
-
-    // Subir plantilla
-    const formSubirPlantilla = document.getElementById('formSubirPlantilla');
-    if (formSubirPlantilla) {
-        formSubirPlantilla.addEventListener('submit', (event) => {
+            agEditableTables.addNewRowFor(targetSelector);
+        } else if (action === 'save') {
             event.preventDefault();
-            const formData = new FormData(formSubirPlantilla);
-            const endpoint = (formSubirPlantilla.getAttribute('action') || 'index.php?ruta=parametros').trim() || 'index.php?ruta=parametros';
-            fetch(endpoint, {
-                method: 'POST',
-                body: formData
-            })
-                .then((respuesta) => respuesta.text())
-                .then((texto) => mostrarAlertaParametros(
-                    interpretarRespuestaParametros(texto, {
-                        successTitle: 'Guardado',
-                        successText: 'Plantilla subida correctamente.'
-                    })
-                ))
-                .catch(() => mostrarErrorConexionParametros());
-        });
-    }
+            agEditableTables.saveTableFor(targetSelector);
+        }
+    });
 
-    // Editar plantilla
-    const formEditarPlantilla = document.getElementById('formEditarPlantilla');
-    if (formEditarPlantilla) {
-        document.addEventListener('click', (event) => {
-            const btn = event.target.closest('.btnEditarPlantilla');
-            if (!btn || !btn.isConnected) {
-                return;
-            }
-
-            const modalIdInput = document.getElementById('editarPlantillaId');
-            const modalTipoSelect = document.getElementById('editarPlantillaTipo');
-
-            if (modalIdInput) {
-                modalIdInput.value = btn.getAttribute('data-id') || '';
-            }
-            if (modalTipoSelect) {
-                modalTipoSelect.value = btn.getAttribute('data-tipo-id') || '';
-            }
-        });
-
-        formEditarPlantilla.addEventListener('submit', (event) => {
-            event.preventDefault();
-            Swal.fire({
-                title: '¿Actualizar plantilla?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, actualizar',
-                cancelButtonText: 'Cancelar'
-            }).then((resultado) => {
-                if (!resultado.isConfirmed) {
-                    return;
-                }
-                const formData = new FormData(formEditarPlantilla);
-                const endpoint = (formEditarPlantilla.getAttribute('action') || 'index.php?ruta=parametros').trim() || 'index.php?ruta=parametros';
-                fetch(endpoint, {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then((respuesta) => respuesta.text())
-                    .then((texto) => mostrarAlertaParametros(
-                        interpretarRespuestaParametros(texto, {
-                            successTitle: 'Actualizado',
-                            successText: 'Plantilla actualizada correctamente.'
-                        })
-                    ))
-                    .catch(() => mostrarErrorConexionParametros());
-            });
-        });
-    }
-
-    const formEditarPlantillaSolicitud = document.getElementById('formEditarPlantillaSolicitud');
-    if (formEditarPlantillaSolicitud) {
-        const idInputSolicitud = document.getElementById('editarPlantillaSolicitudId');
-        const tipoSelectSolicitud = document.getElementById('editarPlantillaSolicitudTipo');
-        const nombreActualSolicitud = document.getElementById('editarPlantillaSolicitudNombre');
-
-        document.addEventListener('click', (event) => {
-            const btn = event.target.closest('.btnEditarPlantillaSolicitud');
-            if (!btn || !btn.isConnected) {
-                return;
-            }
-
-            if (idInputSolicitud) {
-                idInputSolicitud.value = btn.getAttribute('data-id') || '';
-            }
-            if (tipoSelectSolicitud) {
-                tipoSelectSolicitud.value = btn.getAttribute('data-tipo') || '';
-            }
-            if (nombreActualSolicitud) {
-                nombreActualSolicitud.value = btn.getAttribute('data-nombre') || '';
-            }
-        });
-
-        formEditarPlantillaSolicitud.addEventListener('submit', (event) => {
-            event.preventDefault();
-            Swal.fire({
-                title: '¿Actualizar plantilla?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, actualizar',
-                cancelButtonText: 'Cancelar'
-            }).then((resultado) => {
-                if (!resultado.isConfirmed) {
-                    return;
-                }
-                const formData = new FormData(formEditarPlantillaSolicitud);
-                const endpoint = (formEditarPlantillaSolicitud.getAttribute('action') || 'index.php?ruta=parametros').trim() || 'index.php?ruta=parametros';
-                fetch(endpoint, {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then((respuesta) => respuesta.text())
-                    .then((texto) => mostrarAlertaParametros(
-                        interpretarRespuestaParametros(texto, {
-                            successTitle: 'Actualizado',
-                            successText: 'Plantilla actualizada correctamente.'
-                        })
-                    ))
-                    .catch(() => mostrarErrorConexionParametros());
-            });
-        });
-    }
-
-
+    document.addEventListener('click', (event) => {
+        const removeButton = event.target.closest('[data-editable-remove-row]');
+        if (!removeButton) {
+            return;
+        }
+        const rowKey = removeButton.getAttribute('data-editable-remove-row');
+        if (!rowKey) {
+            return;
+        }
+        const table = removeButton.closest('table');
+        if (!table) {
+            return;
+        }
+        event.preventDefault();
+        agEditableTables.removeRowFor(table, rowKey);
+    });
 
     /*
      * Generación de contratos: manejar clic en botón
