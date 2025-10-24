@@ -1098,13 +1098,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const selector = `#${tableElement.id}`;
+        if (typeof agEditableTables !== 'undefined' && agEditableTables && typeof agEditableTables.attach === 'function') {
+            agEditableTables.attach(tableElement, event.detail.instance);
+        }
+
         const manager = tableUxManagers.get(selector);
         if (!manager) {
             return;
-        }
-
-        if (typeof agEditableTables !== 'undefined' && agEditableTables && typeof agEditableTables.attach === 'function') {
-            agEditableTables.attach(tableElement, event.detail.instance);
         }
 
         agInitializeTableInteractions(manager, event.detail.instance, tableElement);

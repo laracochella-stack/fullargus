@@ -28,7 +28,7 @@ final class AppNavigation
      * - route: default route for the module (string|null)
      * - visible: whether the module can be displayed
      * - children: nested quick links/actions (each child may include `visible`)
-     * - nav_peers: preferred ordering of modules in the contextual header nav
+     * - nav_related: modules that share context in the header navigation
      * - keywords: optional search tokens for the app drawer/grid
      * - include_in_grid: whether this module should appear in the application grid
      *
@@ -57,11 +57,10 @@ final class AppNavigation
                 'route' => 'inicio',
                 'visible' => true,
                 'children' => [],
-                'nav_peers' => [
+                'nav_related' => [
                     self::APP_SOLICITUDES,
                     self::APP_CLIENTES,
                     self::APP_CONTRATOS,
-                    self::APP_CONFIGURACION,
                     self::APP_DESARROLLOS,
                 ],
                 'keywords' => ['dashboard', 'home', 'apps'],
@@ -105,11 +104,10 @@ final class AppNavigation
                         'fragment' => 'parametros-plantillas-solicitud',
                     ],
                 ],
-                'nav_peers' => [
+                'nav_related' => [
                     self::APP_SOLICITUDES,
                     self::APP_CLIENTES,
                     self::APP_CONTRATOS,
-                    self::APP_CONFIGURACION,
                 ],
                 'keywords' => ['folios', 'seguimiento', 'captura'],
                 'include_in_grid' => true,
@@ -166,11 +164,11 @@ final class AppNavigation
                         'fragment' => 'parametros-plantillas-contrato',
                     ],
                 ],
-                'nav_peers' => [
+                'nav_related' => [
                     self::APP_CONTRATOS,
-                    self::APP_CLIENTES,
                     self::APP_SOLICITUDES,
-                    self::APP_CONFIGURACION,
+                    self::APP_CLIENTES,
+                    self::APP_DESARROLLOS,
                 ],
                 'keywords' => ['documentos', 'firmas', 'acuerdos'],
                 'include_in_grid' => $canContratos,
@@ -207,11 +205,10 @@ final class AppNavigation
                         'fragment' => 'parametros-nacionalidades',
                     ],
                 ],
-                'nav_peers' => [
+                'nav_related' => [
                     self::APP_CLIENTES,
                     self::APP_SOLICITUDES,
                     self::APP_CONTRATOS,
-                    self::APP_CONFIGURACION,
                 ],
                 'keywords' => ['personas', 'prospectos', 'cartera'],
                 'include_in_grid' => $canClientes,
@@ -232,11 +229,9 @@ final class AppNavigation
                         'visible' => $canDesarrollos,
                     ],
                 ],
-                'nav_peers' => [
+                'nav_related' => [
                     self::APP_DESARROLLOS,
-                    self::APP_CLIENTES,
                     self::APP_CONTRATOS,
-                    self::APP_CONFIGURACION,
                 ],
                 'keywords' => ['inmuebles', 'proyectos'],
                 'include_in_grid' => $canDesarrollos,
@@ -291,11 +286,8 @@ final class AppNavigation
                         'visible' => $canConsola,
                     ],
                 ],
-                'nav_peers' => [
+                'nav_related' => [
                     self::APP_CONFIGURACION,
-                    self::APP_SOLICITUDES,
-                    self::APP_CLIENTES,
-                    self::APP_CONTRATOS,
                 ],
                 'keywords' => ['ajustes', 'roles', 'parámetros', 'sistema'],
                 'include_in_grid' => $canParametros || $canUsuarios || $canConsola,
@@ -456,13 +448,16 @@ final class AppNavigation
             $currentApp = array_key_first($modules) ?? self::APP_SOLICITUDES;
         }
 
-        $preferredOrder = $modules[$currentApp]['nav_peers'] ?? [];
+        $preferredOrder = $modules[$currentApp]['nav_related'] ?? $modules[$currentApp]['nav_peers'] ?? [];
+        if (!is_array($preferredOrder)) {
+            $preferredOrder = [];
+        }
+
         if (!$preferredOrder) {
             $preferredOrder = [
                 self::APP_SOLICITUDES,
                 self::APP_CLIENTES,
                 self::APP_CONTRATOS,
-                self::APP_CONFIGURACION,
                 self::APP_DESARROLLOS,
             ];
         }
