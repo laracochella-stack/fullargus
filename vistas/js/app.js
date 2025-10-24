@@ -526,6 +526,10 @@ function agEnhanceActionMenu(container) {
         return;
     }
 
+    if (!container.getAttribute('role')) {
+        container.setAttribute('role', 'menu');
+    }
+
     const items = container.querySelectorAll('.ag-action-menu-item');
     items.forEach((item) => {
         if (item.dataset.agMenuEnhanced === '1') {
@@ -533,6 +537,9 @@ function agEnhanceActionMenu(container) {
         }
 
         item.dataset.agMenuEnhanced = '1';
+        if (!item.getAttribute('role')) {
+            item.setAttribute('role', 'menuitem');
+        }
         if (!item.hasAttribute('tabindex')) {
             item.setAttribute('tabindex', '0');
         }

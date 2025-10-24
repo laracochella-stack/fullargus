@@ -277,19 +277,18 @@ $renderActionMenu = static function (array $items): string {
             $controlElement->removeChild($textNode);
         }
 
-        $hasVisualContent = false;
+        $iconMarkup = '';
         foreach ($controlElement->childNodes as $childNode) {
             if ($childNode->nodeType === XML_ELEMENT_NODE) {
-                $hasVisualContent = true;
-                break;
-            }
-            if ($childNode->nodeType === XML_TEXT_NODE && trim((string)$childNode->textContent) !== '') {
-                $hasVisualContent = true;
-                break;
+                $iconMarkup = $doc->saveHTML($childNode);
+                if ($iconMarkup !== false && $iconMarkup !== '') {
+                    break;
+                }
+                $iconMarkup = '';
             }
         }
 
-        if (!$hasVisualContent && $label !== '') {
+        if ($iconMarkup === '') {
             $initial = function_exists('mb_substr')
                 ? mb_substr($label, 0, 1, 'UTF-8')
                 : substr($label, 0, 1);
@@ -300,12 +299,12 @@ $renderActionMenu = static function (array $items): string {
                 ? mb_strtoupper($initial, 'UTF-8')
                 : strtoupper((string)$initial);
             if ($initial !== '') {
-                $initialSpan = $doc->createElement('span', $initial);
-                if ($initialSpan) {
-                    $initialSpan->setAttribute('class', 'ag-action-menu-trigger-initial');
-                    $controlElement->appendChild($initialSpan);
-                }
+                $iconMarkup = sprintf('<span class="ag-action-menu-trigger-initial">%s</span>', $initial);
             }
+        }
+
+        if ($iconMarkup === '') {
+            $iconMarkup = '<span class="ag-action-menu-trigger-initial">•</span>';
         }
 
         $actionMarkup = $doc->saveHTML($actionElement);
@@ -314,9 +313,16 @@ $renderActionMenu = static function (array $items): string {
         }
 
         $menuItems[] = sprintf(
-            '<li class="ag-action-menu-item" tabindex="0">%s<div class="ag-action-menu-label">%s</div></li>',
-            $actionMarkup,
-            htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+            '<li class="ag-action-menu-item" tabindex="0" role="menuitem">'
+            . '<div class="ag-action-menu-visual">'
+            . '<span class="ag-action-menu-icon">%s</span>'
+            . '<div class="ag-action-menu-label">%s</div>'
+            . '</div>'
+            . '<div class="ag-action-menu-hidden-control" aria-hidden="true">%s</div>'
+            . '</li>',
+            $iconMarkup,
+            htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            $actionMarkup
         );
     }
 
@@ -324,7 +330,7 @@ $renderActionMenu = static function (array $items): string {
         return '';
     }
 
-    return '<ul class="ag-action-menu list-unstyled mb-0">' . implode('', $menuItems) . '</ul>';
+    return '<ul class="ag-action-menu list-unstyled mb-0" role="menu">' . implode('', $menuItems) . '</ul>';
 };
 
 switch ($resource) {

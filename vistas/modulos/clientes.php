@@ -55,6 +55,9 @@ if (!in_array($permisoClientes, ['moderator','senior','owner','admin'], true)) {
     return;
 }
 
+$accionesMenuId = uniqid('agClientesAccionesMenu');
+$accionesToggleId = $accionesMenuId . 'Toggle';
+
 
 require_once 'vistas/partials/content_header.php';
 ag_render_content_header([
@@ -237,10 +240,23 @@ ag_render_content_header([
               </a>
               <div class="ag-table-ux-current">Clientes</div>
               <div class="dropdown ag-table-ux-actions">
-                <button class="btn btn-outline-secondary ag-table-ux-gear" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones del cliente" disabled>
+                <button
+                  class="btn btn-outline-secondary ag-table-ux-gear"
+                  type="button"
+                  id="<?php echo htmlspecialchars($accionesToggleId, ENT_QUOTES); ?>"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  aria-controls="<?php echo htmlspecialchars($accionesMenuId, ENT_QUOTES); ?>"
+                  aria-label="Acciones del cliente"
+                  disabled>
                   <i class="fas fa-cog"></i>
                 </button>
-                <div class="dropdown-menu dropdown-menu-end ag-table-ux-actions-menu">
+                <div
+                  class="dropdown-menu dropdown-menu-end ag-table-ux-actions-menu"
+                  id="<?php echo htmlspecialchars($accionesMenuId, ENT_QUOTES); ?>"
+                  role="menu"
+                  aria-labelledby="<?php echo htmlspecialchars($accionesToggleId, ENT_QUOTES); ?>">
                   <div class="dropdown-item-text ag-record-empty-hint">Selecciona un cliente para ver acciones disponibles.</div>
                 </div>
               </div>
