@@ -1103,8 +1103,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const selector = `#${tableElement.id}`;
-        if (typeof agEditableTables !== 'undefined' && agEditableTables && typeof agEditableTables.attach === 'function') {
-            agEditableTables.attach(tableElement, event.detail.instance);
+        const editableTables = typeof window !== 'undefined' ? window.agEditableTables : null;
+        if (editableTables && typeof editableTables.attach === 'function') {
+            editableTables.attach(tableElement, event.detail.instance);
         }
 
         const manager = tableUxManagers.get(selector);
