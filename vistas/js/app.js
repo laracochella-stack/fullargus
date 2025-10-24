@@ -1092,6 +1092,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const pendingEditableTableAttachments = [];
+
     document.addEventListener('ag:datatable:ready', (event) => {
         if (!event || typeof event.detail !== 'object' || !event.detail.element) {
             return;
@@ -1103,9 +1105,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const selector = `#${tableElement.id}`;
-        const editableTables = typeof window !== 'undefined' ? window.agEditableTables : null;
-        if (editableTables && typeof editableTables.attach === 'function') {
-            editableTables.attach(tableElement, event.detail.instance);
+        const instance = event.detail.instance;
+
+        const tryAttachEditableTable = () => {
+            const editableTables = typeof window !== 'undefined' ? window.agEditableTables : null;
+            if (!editableTables || typeof editableTables.attach !== 'function') {
+                return false;
+            }
+            editableTables.attach(tableElement, instance);
+            return true;
+        };
+
+        if (!tryAttachEditableTable()) {
+            pendingEditableTableAttachments.push({ element: tableElement, instance });
         }
 
         const manager = tableUxManagers.get(selector);
@@ -5911,6 +5923,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (typeof window !== 'undefined') {
         window.agEditableTables = agEditableTables;
+        if (pendingEditableTableAttachments.length > 0) {
+            const pendientes = pendingEditableTableAttachments.splice(0, pendingEditableTableAttachments.length);
+            pendientes.forEach(({ element, instance }) => {
+                try {
+                    agEditableTables.attach(element, instance);
+                } catch (error) {
+                    console.error('No se pudo inicializar la tabla editable.', error);
+                }
+            });
+        }
     }
 
     document.addEventListener('ag:datatable:data', (event) => {
