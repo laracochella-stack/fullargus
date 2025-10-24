@@ -18,7 +18,7 @@ $notificacionesActivas = !empty($_SESSION['notificaciones_activas']);
           href="index.php?ruta=inicio"
           aria-label="Regresar al menú principal"
         >
-          <span aria-hidden="true">&gt;</span>
+          <i class="fas fa-arrow-left" aria-hidden="true"></i>
         </a>
       <?php endif; ?>
       <a class="navbar-brand fw-semibold" href="index.php?ruta=inicio">

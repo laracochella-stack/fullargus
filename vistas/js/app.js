@@ -3402,6 +3402,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const handleDataTablesError = (state, xhr, textStatus, errorThrown) => {
+        const normalize = (value) => (typeof value === 'string' ? value.toLowerCase() : '');
+        const isAbort = normalize(textStatus) === 'abort'
+            || normalize(errorThrown) === 'abort'
+            || (xhr && typeof xhr.status === 'number' && xhr.status === 0 && (normalize(xhr.statusText) === 'abort' || xhr.readyState === 0));
+
+        if (isAbort) {
+            if (state.element) {
+                state.element.removeAttribute('aria-busy');
+            }
+            state.lastError = null;
+            return;
+        }
+
         const responseJson = xhr && xhr.responseJSON ? xhr.responseJSON : null;
         const mensaje = responseJson && typeof responseJson.error === 'string' && responseJson.error !== ''
             ? responseJson.error
