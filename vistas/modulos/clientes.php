@@ -63,7 +63,6 @@ $accionesToggleId = $accionesMenuId . 'Toggle';
 require_once 'vistas/partials/content_header.php';
 ag_render_content_header([
     'title' => 'Clientes',
-    'subtitle' => 'Consulta, edita y asigna contratos a tus clientes.',
     'breadcrumbs' => [
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Clientes'],

@@ -30,7 +30,6 @@ $puedeCrearAdmin = $permisoSesion === 'admin';
 require_once 'vistas/partials/content_header.php';
 ag_render_content_header([
     'title' => 'Usuarios y roles',
-    'subtitle' => 'Administra cuentas de acceso y niveles de permiso.',
     'breadcrumbs' => [
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Usuarios y roles'],

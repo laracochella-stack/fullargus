@@ -141,7 +141,6 @@ require_once 'vistas/partials/content_header.php';
 $permisoActual = $_SESSION['permission'] ?? '';
 ag_render_content_header([
     'title' => 'Contratos',
-    'subtitle' => 'Administre los contratos activos, archivados o cancelados.',
     'breadcrumbs' => [
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Contratos']

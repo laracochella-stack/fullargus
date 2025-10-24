@@ -2,7 +2,6 @@
 require_once 'vistas/partials/content_header.php';
 ag_render_content_header([
     'title' => 'Página no encontrada',
-    'subtitle' => 'El recurso solicitado no está disponible o fue movido.',
     'breadcrumbs' => [
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Error 404'],

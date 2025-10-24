@@ -109,7 +109,6 @@ if (!in_array($permisoDesarrollos, ['senior','owner','admin'], true)) {
 require_once 'vistas/partials/content_header.php';
 ag_render_content_header([
     'title' => 'Desarrollos',
-    'subtitle' => 'Administra los proyectos inmobiliarios y su información clave.',
     'breadcrumbs' => [
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Desarrollos'],

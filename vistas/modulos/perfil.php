@@ -42,7 +42,6 @@ $notificacionesActivas = !empty($_SESSION['notificaciones_activas']);
 require_once 'vistas/partials/content_header.php';
 ag_render_content_header([
     'title' => 'Mi perfil',
-    'subtitle' => 'Consulta tu información personal y gestiona tus credenciales.',
     'breadcrumbs' => [
         ['label' => 'Inicio', 'url' => 'index.php?ruta=inicio', 'icon' => 'fas fa-home'],
         ['label' => 'Mi perfil'],
